@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Oxford · Inklyuziv xarita</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%23D7192A%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%228%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%223.6%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;800&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+/* VOICE: maktab qabul bo'limining dispetcherlik pulti — aniq, tez, jiddiy.
+   IDEA: avtobus dispetcheri xaritasi + PDF ro'yxatdagi jadval uslubi.
+   PICTURE: butun ekranni egallagan Yandex xarita, ustida halqalar va marshrutlar.
+   COLOUR+TYPE: qora sarlavha, oq panel, Oxford qizili; PDF ko'ki ikkinchi aksent; Onest.
+   LAYOUT: chapda ishchi panel (ro'yxat/avtobus/tahlil/sozlama), o'ngda xarita, ustida o'quvchi kartasi. */
+:root{
+  --red:#D7192A;--red-d:#A30E1B;--red-soft:#FDECEE;
+  --ink:#0E0E10;--ink2:#34343A;--muted:#6E6E76;--line:#E5E5E9;--soft:#F5F5F6;--bg:#fff;
+  --blue:#155CC5;--blue-soft:#F2F6FC;--blue-line:#C9D3E6;
+  --r:12px;--shadow:0 10px 30px rgba(14,14,16,.16),0 2px 6px rgba(14,14,16,.08);
+}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Onest,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:grid;grid-template-rows:auto auto 1fr;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.hidden{display:none!important}
+
+/* ---------- header ---------- */
+.top{background:var(--ink);color:#fff;display:flex;align-items:center;gap:18px;padding:10px 18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.logo{width:40px;height:40px;border-radius:9px;background:var(--red);display:grid;place-items:center;flex:none}
+.brand b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
+.brand span{display:block;font-size:12.5px;color:#B9B9C0}
+.kpis{display:flex;gap:6px;flex-wrap:wrap}
+.kpi{background:#1C1C20;border:1px solid #2C2C32;border-radius:10px;padding:5px 11px;min-width:84px}
+.kpi b{display:block;font-size:18px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi span{font-size:11.5px;color:#A9A9B1;white-space:nowrap}
+.kpi.red b{color:#FF5A67}
+.acts{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 14px;border-radius:10px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);font-weight:600;font-size:14px;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--soft)}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}.btn.red:hover{background:var(--red-d)}
+.btn.dark{background:var(--ink);color:#fff}.btn.dark:hover{background:#26262B}
+.btn.ghost{border-color:var(--line)}
+.btn.sm{min-height:34px;padding:0 10px;font-size:13px;border-radius:8px}
+.btn.block{width:100%}
+.top .btn{border-color:#3A3A40;background:transparent;color:#fff}.top .btn:hover{background:#1F1F24}
+.top .btn.red{background:var(--red);border-color:var(--red)}
+.secret{background:var(--red);color:#fff;font-size:12.5px;padding:5px 18px;display:flex;gap:10px;align-items:center}
+.secret b{font-weight:800}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:minmax(360px,430px) 1fr;min-height:0}
+aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:#fff}
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 8px;flex:none}
+.tab{flex:1;min-height:48px;border:0;background:none;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;font-size:14px}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--red)}
+.pane{flex:1;overflow:auto;padding:14px 16px 24px;display:none}
+.pane.on{display:block}
+.mapwrap{position:relative;min-height:0;background:#EDEBE6}
+#map{position:absolute;inset:0}
+
+/* ---------- controls ---------- */
+.field{display:grid;gap:5px;margin-bottom:10px}
+.field label,.lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.inp{width:100%;min-height:42px;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff;font-size:16px}
+.inp:focus{border-color:var(--ink);outline:none}
+select.inp{padding-right:28px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 11px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:var(--ink2)}
+.chip i{width:10px;height:10px;border-radius:50%;flex:none}
+.chip small{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip[aria-pressed=true] small{color:#C9C9CF}
+.check{display:flex;align-items:center;gap:8px;font-size:13.5px;min-height:34px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--red)}
+.range{display:flex;align-items:center;gap:10px}
+.range input{flex:1;accent-color:var(--red)}
+.range b{min-width:72px;text-align:right;font-variant-numeric:tabular-nums}
+.sec{margin:16px 0 8px;font-size:13px;font-weight:800;text-transform:none;color:var(--ink);display:flex;align-items:center;gap:8px}
+.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+.note{font-size:12.5px;color:var(--muted);line-height:1.45}
+.warn{background:var(--red-soft);color:var(--red-d);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:500}
+.info{background:var(--blue-soft);border:1px solid var(--blue-line);color:#0F3F86;border-radius:10px;padding:9px 12px;font-size:13px}
+details>summary{cursor:pointer;font-weight:600;font-size:13.5px;min-height:34px;display:flex;align-items:center}
+
+/* ---------- list ---------- */
+.listhead{display:flex;justify-content:space-between;align-items:center;margin:12px 0 6px;font-size:13px;color:var(--muted)}
+.list{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;background:#fff;width:100%;text-align:left;border-left:0;border-right:0;border-top:0}
+.item:last-child{border-bottom:0}
+.item:hover{background:var(--soft)}
+.item.sel{background:var(--blue-soft);box-shadow:inset 3px 0 0 var(--blue)}
+.gp{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex:none}
+.gp.apx{background:#fff!important;border:2px dashed currentColor}
+.item .nm,.item .sub{display:block}
+.item .nm{font-weight:600;font-size:14px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .km{font-weight:800;font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.item .st{display:block;font-size:11.5px;font-weight:600;text-align:right;white-space:nowrap}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--soft);color:var(--ink2);margin-left:4px;vertical-align:1px}
+.tag.r{background:var(--red-soft);color:var(--red-d)}
+.tag.b{background:var(--blue-soft);color:var(--blue)}
+.empty{border:2px dashed var(--blue-line);background:var(--blue-soft);border-radius:16px;padding:22px;text-align:center}
+.empty h3{margin:6px 0 4px;font-size:19px}
+.empty.drag{border-color:var(--red);background:var(--red-soft)}
+
+/* ---------- progress ---------- */
+.prog{display:grid;gap:6px;margin:10px 0}
+.bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--red);width:0;transition:width .2s}
+
+/* ---------- map overlays ---------- */
+.mtools{position:absolute;left:12px;bottom:12px;display:grid;gap:8px;z-index:5;max-width:calc(100% - 24px)}
+.mbox{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:8px 10px}
+.seg{display:inline-flex;background:var(--soft);border-radius:9px;padding:3px}
+.seg button{border:0;background:none;padding:5px 10px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted);min-height:30px}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--ink2);max-width:520px}
+.legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.banner{position:absolute;left:12px;top:58px;z-index:6;max-width:min(620px,calc(100% - 24px));background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow);max-width:calc(100% - 24px);font-size:14px}
+.banner .btn{border-color:#4A4A50;background:transparent;color:#fff}
+.mapwrap.carded .banner{max-width:calc(100% - 430px)}
+.banner.redb{background:var(--red)}
+.maperr{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;z-index:4}
+.maperr>div{max-width:440px;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:22px}
+
+/* ---------- card ---------- */
+#card{position:absolute;top:12px;right:12px;bottom:12px;width:min(390px,calc(100% - 24px));background:#fff;border-radius:16px;box-shadow:var(--shadow);z-index:7;display:flex;flex-direction:column;transform:translateX(calc(100% + 30px));transition:transform .22s ease;visibility:hidden}
+#card.open{transform:none;visibility:visible}
+.chd{padding:14px 16px 12px;border-bottom:1px solid var(--line);flex:none}
+.cbody{padding:12px 16px 18px;overflow:auto;flex:1}
+.cnav{display:flex;gap:6px;align-items:center}
+.cnav .x{margin-left:auto}
+.iconbtn{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--line);background:#fff;display:grid;place-items:center;font-size:18px;line-height:1;color:var(--ink)}
+.iconbtn:hover{background:var(--soft)}
+.grp{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff;border-radius:7px;padding:3px 8px;max-width:100%}
+.grp span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;opacity:.92}
+.cname{font-size:21px;font-weight:800;line-height:1.15;margin:8px 0 2px;letter-spacing:-.01em}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}
+.fact{background:var(--soft);border-radius:10px;padding:7px 9px}
+.fact b{display:block;font-size:15.5px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.fact span{font-size:11.5px;color:var(--muted)}
+.phone{display:flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:12px;padding:6px 6px 6px 12px;margin-bottom:8px}
+.phone a{font-size:18px;font-weight:800;color:var(--ink);text-decoration:none;flex:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 10px}
+.stb{min-height:40px;border-radius:9px;border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:600;padding:3px 4px;line-height:1.15;display:flex;align-items:center;justify-content:center;gap:5px}
+.stb i{width:9px;height:9px;border-radius:50%;flex:none}
+.stb[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:#fff}
+textarea.inp{min-height:70px;resize:vertical;font-size:15px}
+.log{display:grid;gap:4px;margin-top:6px}
+.log div{font-size:12.5px;color:var(--ink2);background:var(--soft);border-radius:8px;padding:5px 8px}
+.log time{color:var(--muted);margin-right:6px;font-variant-numeric:tabular-nums}
+.kv{width:100%;border-collapse:collapse;font-size:13px}
+.kv td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.kv td:first-child{color:var(--muted);width:38%;padding-right:10px}
+.blur{filter:blur(5px);user-select:none;cursor:pointer}
+.near{display:grid;gap:4px;margin-top:6px}
+.near button{text-align:left;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 9px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+
+/* ---------- bus ---------- */
+.rose{width:100%;max-width:300px;aspect-ratio:1;display:block;margin:4px auto 6px}
+.dirs{width:100%;border-collapse:collapse;font-size:13px}
+.dirs th{font-size:12px;color:var(--muted);text-align:left;font-weight:600;padding:5px 4px;border-bottom:1px solid var(--line)}
+.dirs td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.dirs td.n{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.route{border:1px solid var(--line);border-radius:var(--r);margin:10px 0;overflow:hidden}
+.route .rh{display:flex;align-items:center;gap:10px;padding:10px 12px;border-left:6px solid}
+.route .rh b{font-size:15px}
+.route .rs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:0 12px 10px}
+.route .rs div{font-size:11.5px;color:var(--muted)}
+.route .rs b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.route ol{margin:0;padding:8px 12px 10px 34px;font-size:13px;border-top:1px solid var(--line);max-height:260px;overflow:auto}
+.route ol li{padding:2px 0}
+.route .ra{display:flex;gap:6px;padding:0 12px 12px;flex-wrap:wrap}
+
+/* ---------- stats ---------- */
+.bars{display:grid;gap:7px}
+.brow{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 3.2em;gap:8px;align-items:center;font-size:13px}
+.brow .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow .tr{height:16px;background:var(--soft);border-radius:5px;overflow:hidden}
+.brow .tr i{display:block;height:100%;border-radius:5px}
+.brow .v{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.big{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.big div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.big b{display:block;font-size:26px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.big span{font-size:12.5px;color:var(--muted)}
+
+/* ---------- modal / toast ---------- */
+.modal{position:fixed;inset:0;background:rgba(14,14,16,.55);display:grid;place-items:center;z-index:50;padding:16px}
+.modal>div{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:22px;box-shadow:var(--shadow)}
+.modal h2{margin:0 0 6px;font-size:22px;letter-spacing:-.01em}
+.modal ol{padding-left:20px;margin:8px 0 12px;font-size:14px}
+.modal ol li{margin:3px 0}
+.maptbl{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+.maptbl td{padding:4px 4px;border-bottom:1px solid var(--line)}
+.maptbl td:first-child{font-weight:600;width:36%}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;z-index:60;transition:.2s;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 32px);pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#printArea{display:none}
+
+@media (max-width:900px){
+  body{overflow:auto;grid-template-rows:auto auto auto}
+  html,body{height:auto}
+  .layout{grid-template-columns:1fr}
+  .mapwrap{order:-1;height:56vh;min-height:360px}
+  aside{border-right:0;border-top:1px solid var(--line)}
+  .pane{overflow:visible}
+  #card{position:fixed;top:auto;left:0;right:0;bottom:0;width:auto;max-height:78vh;border-radius:18px 18px 0 0;transform:translateY(105%)}
+  .kpi{min-width:70px}.kpi:nth-child(n+4){display:none}
+  .mtools .mbox:last-child{display:none}
+  .mtools{left:8px;bottom:8px}
+  .mtools .mbox{padding:6px;overflow-x:auto;flex-wrap:nowrap}
+  .banner{top:auto;bottom:64px;left:8px;right:8px;max-width:none;font-size:13px}
+  .mapwrap.carded .banner{max-width:none}
+  .secret span{display:none}
+}
+@media (max-width:520px){
+  .top{gap:10px;padding:10px 12px}
+  .acts .btn span{display:none}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .legend{max-width:none}
+  .route .rs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  body{display:block;overflow:visible;height:auto}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block;font:12px/1.4 Onest,Arial,sans-serif;color:#000}
+  #printArea section{page-break-after:always}
+  #printArea h2{font-size:18px;margin:0 0 4px}
+  #printArea table{width:100%;border-collapse:collapse}
+  #printArea th,#printArea td{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top}
+  #printArea th{background:#155CC5;color:#fff}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2" fill="none" stroke="#fff" stroke-width="3.4"/></svg></div>
+    <div><b>Oxford School</b><span>Inklyuziv sinf · Xorazm bo'yicha xarita</span></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="acts">
+    <button class="btn red" id="btnImport" title="Excel yoki shifrlangan faylni yuklash"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V2M4.5 5.5 8 2l3.5 3.5M2 11v3h12v-3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Ro'yxat yuklash</span></button>
+    <button class="btn" id="btnExport" title="Excel'ga eksport"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v9M4.5 7.5 8 11l3.5-3.5M2 11v3h12v-3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Excel</span></button>
+  </div>
+  <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.json" multiple hidden>
+</header>
+<div class="secret"><b>MAXFIY</b><span>Shaxsga doir va tibbiy ma'lumot. Faqat sotuv bo'limi ichki ishi uchun. Ro'yxatni ko'paytirmang va guruhlarga tashlamang.</span></div>
+
+<main class="layout">
+  <aside>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="list" aria-selected="true">Ro'yxat</button>
+      <button class="tab" role="tab" data-tab="bus" aria-selected="false">Avtobus</button>
+      <button class="tab" role="tab" data-tab="stats" aria-selected="false">Tahlil</button>
+      <button class="tab" role="tab" data-tab="set" aria-selected="false">Sozlamalar</button>
+    </nav>
+
+    <!-- RO'YXAT -->
+    <section class="pane on" id="pane-list">
+      <div id="emptyState" class="empty hidden">
+        <svg width="54" height="54" viewBox="0 0 54 54" aria-hidden="true"><rect x="9" y="5" width="36" height="44" rx="5" fill="#fff" stroke="#155CC5" stroke-width="2"/><path d="M16 17h22M16 25h22M16 33h14" stroke="#155CC5" stroke-width="2"/><circle cx="41" cy="41" r="10" fill="#D7192A"/><path d="M41 36v10M36 41h10" stroke="#fff" stroke-width="2.4"/></svg>
+        <h3>O'quvchilar ro'yxatini yuklang</h3>
+        <p class="note">Excel (.xlsx) yoki CSV faylni shu yerga tashlang. Ustunlar (F.I.Sh, Tuman, Manzil, Telefon, Kasallik turi…) avtomatik aniqlanadi. Bir nechta faylni birdan yuklash mumkin.</p>
+        <div class="row" style="justify-content:center;margin-top:10px">
+          <button class="btn red" data-act="pick">Fayl tanlash</button>
+          <button class="btn ghost" data-act="demo">Namuna bilan ko'rish</button>
+        </div>
+        <p class="note" style="margin-top:12px">Ma'lumot faqat shu brauzerda saqlanadi va hech qayerga yuborilmaydi.</p>
+      </div>
+
+      <div id="listUI">
+        <div id="demoBanner" class="warn hidden" style="margin-bottom:10px">Namuna ma'lumot ko'rsatilmoqda. Haqiqiy ro'yxatni yuklasangiz, namuna o'chadi.</div>
+        <input class="inp" id="q" type="search" placeholder="Ism, manzil, telefon, maktab… ( / )" autocomplete="off">
+        <div class="chips" id="grpChips"></div>
+        <div class="chips" id="stChips" style="margin-top:0"></div>
+        <div class="grid2">
+          <div class="field"><label for="fDist">Tuman</label><select class="inp" id="fDist"></select></div>
+          <div class="field"><label for="fGrade">Sinf</label>
+            <select class="inp" id="fGrade"><option value="">Hammasi</option><option value="1-4">1–4 sinf</option><option value="5-9">5–9 sinf</option><option value="10-11">10–11 sinf</option></select></div>
+        </div>
+        <div class="field"><label for="fKm">Maktabdan masofa</label>
+          <div class="range"><input type="range" id="fKm" min="0" max="80" step="1" value="0"><b id="fKmV">hammasi</b></div></div>
+        <div class="grid2">
+          <label class="check"><input type="checkbox" id="fApx"> Joyi taxminiylar</label>
+          <label class="check"><input type="checkbox" id="fDue"> Bugun bog'lanish</label>
+          <label class="check"><input type="checkbox" id="fPtpk"> PTPK baholasin</label>
+          <div class="field" style="margin:0"><select class="inp" id="fSort" aria-label="Saralash" style="min-height:36px;font-size:14px">
+            <option value="dist">Yaqinidan uzoqqa</option><option value="name">Ism bo'yicha</option><option value="dist2">Tuman bo'yicha</option><option value="touch">Oxirgi aloqa</option><option value="grade">Sinf bo'yicha</option></select></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn dark sm" id="btnGeo" title="Yandex geokoder orqali manzillarni xaritada aniqlash">Manzillarni aniqlash</button>
+          <button class="btn sm" id="btnQueue" title="Taxminiy joylashuvni navbat bilan qo'lda to'g'rilash">Qo'lda belgilash navbati</button>
+          <button class="btn sm ghost" id="btnCopy" title="Filtrdagi ro'yxatni nusxalash">Ro'yxatni nusxalash</button>
+          <button class="btn sm ghost" id="btnReset">Filtrni tozalash</button>
+        </div>
+        <div id="geoProg" class="prog hidden"><div class="row" style="justify-content:space-between"><span id="geoTxt" class="note"></span><button class="btn sm ghost" id="geoStop">To'xtatish</button></div><div class="bar"><i id="geoBar"></i></div></div>
+        <div class="listhead"><span id="cnt"></span><span id="cntApx"></span></div>
+        <div class="list" id="list"></div>
+      </div>
+    </section>
+
+    <!-- AVTOBUS -->
+    <section class="pane" id="pane-bus">
+      <p class="note" style="margin-top:0">Marshrutlar «Ro'yxat» bo'limidagi filtr bo'yicha tuziladi («Rad etdi» holatidagilar hisobga olinmaydi). Masalan: avval «Qiziqdi» va «20 km» ni tanlang, keyin shu yerda hisoblang.</p>
+      <div class="sec">Yo'nalishlar bo'yicha o'quvchilar</div>
+      <svg class="rose" id="rose" viewBox="0 0 300 300" role="img" aria-label="Yo'nalishlar diagrammasi"></svg>
+      <table class="dirs" id="dirs"></table>
+      <div class="sec">Marshrut tuzish</div>
+      <div class="grid2">
+        <div class="field"><label for="bBuses">Avtobuslar (0 = avtomatik)</label><input class="inp" id="bBuses" type="number" min="0" max="20" value="0"></div>
+        <div class="field"><label for="bCap">Sig'imi (o'rindiq)</label><input class="inp" id="bCap" type="number" min="2" max="60" value="16"></div>
+        <div class="field"><label for="bMax">Maks. masofa, km</label><input class="inp" id="bMax" type="number" min="1" max="120" value="25"></div>
+        <div class="field"><label for="bMerge">Bekat radiusi, metr</label><input class="inp" id="bMerge" type="number" min="0" max="3000" step="50" value="400"></div>
+      </div>
+      <details><summary>Qo'shimcha parametrlar</summary>
+        <div class="grid3" style="margin-top:6px">
+          <div class="field"><label for="bSpeed">Tezlik, km/s</label><input class="inp" id="bSpeed" type="number" min="10" max="90" value="35"></div>
+          <div class="field"><label for="bDwell">Bekatda, daq</label><input class="inp" id="bDwell" type="number" min="0" max="15" value="3"></div>
+          <div class="field"><label for="bFactor">Yo'l koeff.</label><input class="inp" id="bFactor" type="number" min="1" max="2" step="0.05" value="1.35"></div>
+        </div>
+        <p class="note">Yo'l koeffitsienti: to'g'ri chiziq masofasini haqiqiy yo'lga aylantiradi (Xorazm uchun ~1.3–1.4). «Yo'l bo'ylab» tugmasi Yandex orqali aniq yo'l masofasini hisoblaydi.</p>
+      </details>
+      <label class="check"><input type="checkbox" id="bApx"> Joyi faqat tuman markazi bo'yicha bo'lganlarni ham qo'shish</label>
+      <div id="busCount" class="info" style="margin:8px 0"></div>
+      <button class="btn red block" id="btnPlan">Marshrutlarni tuzish</button>
+      <div id="routes"></div>
+    </section>
+
+    <!-- TAHLIL -->
+    <section class="pane" id="pane-stats"><div id="stats"></div></section>
+
+    <!-- SOZLAMALAR -->
+    <section class="pane" id="pane-set">
+      <div class="sec" style="margin-top:0">Maktab joylashuvi</div>
+      <div class="field"><label for="sName">Nomi</label><input class="inp" id="sName"></div>
+      <div class="grid2">
+        <div class="field"><label for="sLat">Kenglik (lat)</label><input class="inp" id="sLat" inputmode="decimal"></div>
+        <div class="field"><label for="sLon">Uzunlik (lon)</label><input class="inp" id="sLon" inputmode="decimal"></div>
+      </div>
+      <div class="row"><button class="btn dark sm" id="btnSchoolPick">Xaritada belgilash</button><button class="btn sm" id="btnSchoolSave">Saqlash</button></div>
+      <p class="note">Yandex Xaritada maktab binosi ustiga o'ng tugma bilan bosing → «Что здесь?» → koordinatani nusxalang. Yoki «Xaritada belgilash» ni bosib, xaritada maktabni bosing.</p>
+
+      <div class="sec">Yandex xarita kaliti</div>
+      <div class="field"><label for="sKey">API kalit</label><input class="inp" id="sKey" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"></div>
+      <div class="row"><button class="btn dark sm" id="btnKeySave">Saqlash va xaritani yangilash</button><button class="btn sm ghost" data-act="keyhelp">Kalitni qanday olish?</button></div>
+
+      <div class="sec">Xarita</div>
+      <div class="field"><label for="sRings">Masofa halqalari, km (vergul bilan)</label><input class="inp" id="sRings" value="5, 10, 20, 30"></div>
+      <div class="row"><button class="btn sm" id="btnRingsSave">Qo'llash</button></div>
+
+      <div class="sec">Ma'lumotlar</div>
+      <div class="grid2">
+        <button class="btn sm" id="btnExcel2">Excel'ga eksport</button>
+        <button class="btn sm" data-act="pick">Excel yuklash</button>
+        <button class="btn sm dark" id="btnEnc">Shifrlangan fayl yaratish</button>
+        <button class="btn sm" id="btnDec">Shifrlangan faylni ochish</button>
+      </div>
+      <p class="note">Jamoa bilan ulashish: «Shifrlangan fayl yaratish» → parol qo'ying → faylni hamkasbga bering (parolni alohida, og'zaki ayting). Hamkasb «Shifrlangan faylni ochish» orqali ochadi. Holatlar va izohlar ham shu faylda o'tadi. Parolsiz fayl o'qib bo'lmaydi.</p>
+      <input type="file" id="encInput" accept=".json" hidden>
+      <div class="sec">Xavfsizlik</div>
+      <p class="note">Ro'yxat faqat shu qurilmadagi brauzer xotirasida (localStorage) turadi. Sayt GitHub'da bo'lsa ham, unga o'quvchilar ma'lumoti yozilmaydi. Begona kompyuterda ishlagandan keyin ma'lumotni o'chiring.</p>
+      <button class="btn sm" id="btnWipe" style="border-color:var(--red);color:var(--red)">Barcha ma'lumotni o'chirish</button>
+    </section>
+  </aside>
+
+  <section class="mapwrap" aria-label="Xarita">
+    <div id="map"></div>
+    <div id="mapErr" class="maperr hidden"></div>
+    <div id="banner" class="banner hidden"></div>
+    <div class="mtools">
+      <div class="mbox row" style="gap:8px">
+        <div class="seg" role="group" aria-label="Belgilar rangi"><button data-cm="group" aria-pressed="true">Guruh</button><button data-cm="status" aria-pressed="false">Holat</button></div>
+        <button class="btn sm ghost" id="btnRings" aria-pressed="true">Halqalar</button>
+        <button class="btn sm ghost" id="btnFit">Hammasi</button>
+        <button class="btn sm ghost" id="btnSchool">Maktab</button>
+      </div>
+      <div class="mbox"><div class="legend" id="legend"></div></div>
+    </div>
+    <div id="card" aria-live="polite"></div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div id="modalBody"></div></div>
+<div id="toast" role="status"></div>
+<div id="printArea"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+{
+/* ================== ASOSIY SOZLAMALAR ================== */
+const CFG = Object.assign({ yandexApiKey: '', school: { name: 'Oxford School', lat: 41.3783, lon: 60.3639 }, encryptedDataUrl: '' }, window.APP_CONFIG || {});
+const LS = 'oxf-ink-v1', LSG = 'oxf-ink-geo-v1', LSK = 'oxf-ink-key';
+const BBOX = [[40.85, 59.85], [42.15, 61.75]]; // Xorazm viloyati chegarasi (taxminan)
+
+const STATUSES = [
+  { k: 'new', t: 'Yangi', c: '#0E0E10' },
+  { k: 'noans', t: 'Javob bermadi', c: '#9A9AA3' },
+  { k: 'think', t: "O'ylab ko'radi", c: '#F08C96' },
+  { k: 'int', t: 'Qiziqdi', c: '#D7192A' },
+  { k: 'enr', t: "Ro'yxatga olindi", c: '#155CC5' },
+  { k: 'rej', t: 'Rad etdi', c: '#CFCFD5' },
+];
+const ST = Object.fromEntries(STATUSES.map(s => [s.k, s]));
+const GCOLORS = ['#D7192A', '#155CC5', '#0E0E10', '#7A0F18', '#5B6B8C', '#E0707A', '#2E2E33'];
+const RCOLORS = ['#D7192A', '#155CC5', '#0E0E10', '#E27A12', '#7A0F18', '#5B6B8C', '#1D8A5E', '#9B4DCA', '#B8860B', '#2F6F9F'];
+const ACC = { qolda: { r: 6, t: "Qo'lda belgilangan" }, uy: { r: 5, t: 'Uy aniqligida' }, kocha: { r: 4, t: "Ko'cha aniqligida" }, mahalla: { r: 3, t: 'Mahalla aniqligida' }, aholi: { r: 2, t: 'Qishloq/shahar markazi' }, tuman: { r: 1, t: 'Tuman markazi (taxminiy)' }, coord: { r: 6, t: 'Fayldagi koordinata' } };
+const rank = a => (ACC[a] || { r: 0 }).r;
+
+/* Tumanlar: markaz koordinatalari taxminiy, faqat zaxira sifatida ishlatiladi */
+const DIST = [
+  { k: 'xivash', n: 'Xiva shahri', re: /xiva\s*(sh\b|sh\.|shahar|shahri)/, c: [41.3783, 60.3639], base: 'xiva' },
+  { k: 'urgsh', n: 'Urganch shahri', re: /urganch\s*(sh\b|sh\.|shahar|shahri)/, c: [41.5506, 60.6317], base: 'urg' },
+  { k: 'qosh', n: "Qo'shko'pir tumani", re: /qo'?sh\s*ko'?pir|qushkupir|кушкупыр/, c: [41.5353, 60.3456] },
+  { k: 'haz', n: 'Hazorasp tumani', re: /hazorasp|xazorasp|хазарасп/, c: [41.3194, 61.0742] },
+  { k: 'bog', n: "Bog'ot tumani", re: /bog'?ot|bag'?at|багат/, c: [41.3486, 60.8611] },
+  { k: 'shov', n: 'Shovot tumani', re: /shovot|шават/, c: [41.6558, 60.3022] },
+  { k: 'xonq', n: 'Xonqa tumani', re: /xonqa|ханк/, c: [41.4747, 60.7856] },
+  { k: 'tup', n: "Tuproqqal'a tumani", re: /tuproqqal'?a|тупраккал/, c: [41.17, 61.2] },
+  { k: 'yar', n: 'Yangiariq tumani', re: /yangiariq|янгиарык/, c: [41.3378, 60.5636] },
+  { k: 'ybz', n: 'Yangibozor tumani', re: /yangibozor|янгибазар/, c: [41.7186, 60.5658] },
+  { k: 'gur', n: 'Gurlan tumani', re: /gurlan|гурлен/, c: [41.8444, 60.3919] },
+  { k: 'xivat', n: 'Xiva tumani', re: /xiva|хива/, c: [41.4, 60.395], base: 'xiva' },
+  { k: 'urgt', n: 'Urganch tumani', re: /urganch|ургенч/, c: [41.615, 60.565], base: 'urg' },
+];
+const DK = Object.fromEntries(DIST.map(d => [d.k, d]));
+const DIRS = ['Shimol', 'Shimoli-sharq', 'Sharq', 'Janubi-sharq', 'Janub', "Janubi-g'arb", "G'arb", "Shimoli-g'arb"];
+const DIRS_S = ['Shim.', 'Sh-sharq', 'Sharq', 'J-sharq', 'Janub', "J-g'arb", "G'arb", "Sh-g'arb"];
+
+/* ================== YORDAMCHILAR ================== */
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = t => String(t ?? '').toLowerCase().replace(/[`ʻʼ’‘ʹ´′]/g, "'").replace(/\s+/g, ' ').trim();
+const rad = d => d * Math.PI / 180;
+function hav(a, b) { const R = 6371, dLa = rad(b[0] - a[0]), dLo = rad(b[1] - a[1]); const x = Math.sin(dLa / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
+function bearing(a, b) { const y = Math.sin(rad(b[1] - a[1])) * Math.cos(rad(b[0])); const x = Math.cos(rad(a[0])) * Math.sin(rad(b[0])) - Math.sin(rad(a[0])) * Math.cos(rad(b[0])) * Math.cos(rad(b[1] - a[1])); return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; }
+const sector = deg => Math.round(deg / 45) % 8;
+const fmtKm = k => k == null || isNaN(k) ? '—' : (k < 10 ? k.toFixed(1) : Math.round(k)) + ' km';
+const fmtMin = m => m < 60 ? Math.round(m) + ' daq' : Math.floor(m / 60) + ' soat ' + Math.round(m % 60) + ' daq';
+const fmtHM = m => m < 60 ? Math.round(m) + ' daq' : Math.floor(m / 60) + ':' + String(Math.round(m % 60)).padStart(2, '0') + ' soat';
+function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+function jitter(c, id, maxM) { const h = parseInt(hashStr(id + 'j'), 36); const ang = (h % 360) * Math.PI / 180; const r = ((h >> 9) % 1000) / 1000 * maxM; return [c[0] + (r * Math.cos(ang)) / 111320, c[1] + (r * Math.sin(ang)) / (111320 * Math.cos(rad(c[0])))]; }
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDT = iso => { const d = new Date(iso); return d.toLocaleDateString('ru-RU') + ' ' + d.toTimeString().slice(0, 5); };
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+async function copyText(t) { try { await navigator.clipboard.writeText(t); return true; } catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (_) { } ta.remove(); return ok; } }
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+
+function matchDistrict(text) { const t = norm(text); if (!t) return null; for (const d of DIST) if (d.re.test(t)) return d; return null; }
+function pickDistrict(col, addr) {
+  const a = matchDistrict(col), b = matchDistrict(addr);
+  if (a && b && a.k !== b.k && a.base && a.base === b.base) return b; // "Xiva shahar" ustuni, lekin manzil "Xiva tumani …"
+  return a || b;
+}
+const STOPW = new Set(['xorazm', 'viloyati', 'viloyat', 'tumani', 'tuman', 'tumami', 'tumanidagi', 'shahar', 'shahari', 'shahri', 'sh', 'xiva', 'urganch', 'mfy', 'qfy', 'va', 'yashovchi', 'qishloq', 'qishlog\'i', 'ko\'cha', 'ko\'chasi', 'uy']);
+function mahallaOf(addr) {
+  const t = norm(addr).replace(/[,;()"]/g, ' ').replace(/([a-z']{3,})\.(?=[a-z']{3,})/g, '$1 ');
+  const m = t.match(/([a-z'.\-]+(?:\s+[a-z0-9'.\-]+)?)\s*(?:m\.?f\.?y\b|q\.?f\.?y\b|mahallas[iy]da|mahallasi|mahalla\b|maxallasi|maxalla\b|mahallas\b|max\b|mah\b|ovuli|qishlog'i)/);
+  if (!m) return '';
+  const w = m[1].split(/\s+/).map(x => x.replace(/^[a-z]\./, '').replace(/^[.\-']+|[.\-]+$/g, '')).filter(x => x && !STOPW.has(x) && !matchDistrict(x));
+  return w.slice(-2).join(' ');
+}
+function fmtPhone(p) {
+  const d = String(p || '').replace(/\D/g, '');
+  let n = d.length === 9 ? '998' + d : d;
+  if (n.length === 12 && n.startsWith('998')) return { t: `+998 ${n.slice(3, 5)} ${n.slice(5, 8)} ${n.slice(8, 10)} ${n.slice(10)}`, href: '+' + n, ok: true };
+  return { t: String(p || '').trim(), href: d.length >= 7 ? d : '', ok: false };
+}
+function ageOf(b) { const m = String(b || '').match(/(20\d{2}|199\d)/); if (!m) return null; const y = +m[1]; const a = new Date().getFullYear() - y; return a >= 3 && a <= 25 ? a : null; }
+function gradeNum(g) { const m = String(g || '').match(/\d+/); return m ? +m[0] : null; }
+
+/* ================== HOLAT ================== */
+const S = {
+  students: [], cols: [], groups: {}, demo: false,
+  school: Object.assign({ set: false }, CFG.school),
+  settings: { colorMode: 'group', rings: true, ringList: [5, 10, 20, 30] },
+  f: { q: '', groups: [], st: [], dist: '', grade: '', maxKm: 0, approx: false, due: false, ptpk: false, sort: 'dist' },
+  sel: null, routes: [], view: [],
+};
+let GEO = lsGet(LSG, {});
+function save() {
+  const ok = lsSet(LS, { students: S.students, cols: S.cols, groups: S.groups, demo: S.demo, school: S.school, settings: S.settings, f: S.f, routes: S.routes.map(({ roadObj, ...r }) => r) });
+  if (!ok) toast("Brauzer xotirasiga saqlab bo'lmadi");
+}
+function load() {
+  const d = lsGet(LS, null); if (!d) return;
+  Object.assign(S, { students: d.students || [], cols: d.cols || [], groups: d.groups || {}, demo: !!d.demo, routes: d.routes || [] });
+  if (d.school) S.school = Object.assign(S.school, d.school);
+  if (d.settings) Object.assign(S.settings, d.settings);
+  if (d.f) Object.assign(S.f, d.f);
+  S.students.forEach(prep);
+}
+function prep(s) {
+  s.km = s.lat != null ? hav([S.school.lat, S.school.lon], [s.lat, s.lon]) : null;
+  s.dir = s.lat != null ? sector(bearing([S.school.lat, S.school.lon], [s.lat, s.lon])) : null;
+  s._q = norm([s.name, s.addr, s.district, s.phone, s.school, s.g, s.mah, s.note, s.notes].join(' '));
+}
+function groupColor(g) { const keys = Object.keys(S.groups).sort(); const i = keys.indexOf(g); return GCOLORS[(i < 0 ? 0 : i) % GCOLORS.length]; }
+function groupLetter(g) { const m = String(g).match(/^([A-Za-zА-Яа-я0-9])/); return m ? m[1].toUpperCase() : '•'; }
+function colorOf(s) { return S.settings.colorMode === 'status' ? (ST[s.status] || ST.new).c : groupColor(s.g); }
+const isDue = s => s.follow && s.follow <= today();
+function touch(s) { s.u = Date.now(); }
+
+/* ================== IMPORT ================== */
+const ROLES = [
+  ['num', '№ (tartib raqami)', /^(№|n|#|t\/r|т\/р|tr|n°)$/i],
+  ['group', 'Guruh (A/B/C-sinf)', /^(guruh|group|гуруҳ|группа)$/i],
+  ['groupName', "Guruh yo'nalishi", /(yo.?nalish|йўналиш|направлен)/i],
+  ['name', 'F.I.Sh', /(f\.?\s?i\.?\s?sh|f\.?\s?i\.?\s?o|ф\.?\s?и\.?\s?ш|ф\.?\s?и\.?\s?о|^ism|familiya|o.quvchi|ўқувчи|фамилия|full\s?name|^name)/i],
+  ['birth', "Tug'ilgan sana", /(tug.?ilgan|туғилган|рожд|birth)/i],
+  ['district', 'Tuman (shahar)', /(tuman|туман|район)/i],
+  ['school', 'Maktab', /(maktab|мактаб|школа|school)/i],
+  ['grade', 'Sinf', /^(sinf|синф|класс|class)$/i],
+  ['diag', 'Kasallik turi / tashxis', /(kasallik|tashxis|ташхис|диагноз|nogironlik|toifa|kasal)/i],
+  ['addr', 'Manzil', /(manzil|адрес|манзил|yashash|address)/i],
+  ['phone', 'Telefon', /(tel|телефон|phone|aloqa)/i],
+  ['note', 'Izoh', /(izoh|изоҳ|примеч|note|eslatma)/i],
+  ['lat', 'Kenglik (lat)', /(^lat|kenglik|широта)/i],
+  ['lon', 'Uzunlik (lon)', /(^lon|^lng|uzunlik|долгота)/i],
+];
+function detectRoles(hdr) {
+  const roles = {};
+  hdr.forEach((h, i) => { const t = String(h || '').trim(); if (!t) return; for (const [k, , re] of ROLES) { if (roles[k] == null && re.test(t)) { roles[k] = i; break; } } });
+  return roles;
+}
+function detectHeader(rows) {
+  let best = 0, bi = 0;
+  rows.slice(0, 25).forEach((r, i) => { const n = Object.keys(detectRoles(r)).length; if (n > best) { best = n; bi = i; } });
+  return best >= 2 ? bi : 0;
+}
+async function readFile(file) {
+  if (!window.XLSX) throw new Error("Excel kutubxonasi yuklanmadi (internetni tekshiring)");
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+  const out = [];
+  for (const sn of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: '' });
+    if (rows.length < 2) continue;
+    const hi = detectHeader(rows);
+    const hdr = rows[hi].map(x => String(x || '').trim());
+    const roles = detectRoles(hdr);
+    if (roles.name == null) continue;
+    out.push({ sheet: sn, hdr, roles, rows: rows.slice(hi + 1).filter(r => r.some(c => String(c).trim() !== '')) });
+  }
+  return out;
+}
+async function handleFiles(files) {
+  files = [...files]; if (!files.length) return;
+  const encs = files.filter(f => /\.json$/i.test(f.name));
+  const xls = files.filter(f => !/\.json$/i.test(f.name));
+  for (const f of encs) await openEncrypted(f);
+  if (!xls.length) return;
+  let added = 0, updated = 0;
+  if (S.demo) { S.students = []; S.groups = {}; S.cols = []; S.demo = false; S.routes = []; }
+  for (const f of xls) {
+    let sheets;
+    try { sheets = await readFile(f); } catch (e) { toast(f.name + ': ' + e.message, 5000); continue; }
+    if (!sheets.length) { await mappingDialog(f).catch(() => null); continue; }
+    for (const sh of sheets) {
+      if (sh.roles.addr == null) { const r = await mappingDialog(f, sh).catch(() => null); if (!r) continue; sh.roles = r; }
+      const res = ingest(sh, f.name); added += res.a; updated += res.u;
+    }
+  }
+  afterDataChange();
+  toast(`${added} ta yangi, ${updated} ta yangilangan o'quvchi. Jami: ${S.students.length}`, 4000);
+  fitAll();
+}
+function ingest(sh, fname) {
+  const fg = (fname.match(/([A-Z])[-_ ]?sinf/i) || [])[1];
+  const byId = new Map(S.students.map(s => [s.id, s]));
+  let a = 0, u = 0;
+  sh.hdr.forEach(h => { if (h && !S.cols.includes(h)) S.cols.push(h); });
+  for (const r of sh.rows) {
+    const get = k => sh.roles[k] != null ? String(r[sh.roles[k]] ?? '').replace(/\s+/g, ' ').trim() : '';
+    const name = get('name'); if (!name || name.length < 3) continue;
+    let g = get('group') || (fg ? fg.toUpperCase() + '-sinf' : 'Umumiy');
+    if (/^[A-Za-z]$/.test(g)) g = g.toUpperCase() + '-sinf';
+    if (!S.groups[g]) S.groups[g] = { name: get('groupName') || '' };
+    else if (!S.groups[g].name && get('groupName')) S.groups[g].name = get('groupName');
+    const raw = {}; sh.hdr.forEach((h, i) => { const v = String(r[i] ?? '').trim(); if (h && v) raw[h] = v; });
+    const birth = get('birth');
+    const id = hashStr(norm(g + '|' + name + '|' + birth));
+    const addr = get('addr'), dcol = get('district');
+    const d = pickDistrict(dcol, addr);
+    const rec = { id, g, name, birth, age: ageOf(birth), district: d ? d.n : (dcol || "Noma'lum"), dk: d ? d.k : '', dcol, school: get('school'), grade: get('grade'), diag: get('diag'), addr, phone: get('phone'), note: get('note'), raw, mah: mahallaOf(addr) };
+    const lat = parseFloat(String(get('lat')).replace(',', '.')), lon = parseFloat(String(get('lon')).replace(',', '.'));
+    const old = byId.get(id);
+    if (old) {
+      Object.assign(old, rec);
+      if (!isNaN(lat) && !isNaN(lon) && rank(old.acc) < 6) Object.assign(old, { lat, lon, acc: 'coord' });
+      u++; prep(old);
+    } else {
+      const s = Object.assign(rec, { status: 'new', notes: '', calls: [], follow: '', u: Date.now() });
+      if (!isNaN(lat) && !isNaN(lon)) Object.assign(s, { lat, lon, acc: 'coord' });
+      S.students.push(s); byId.set(id, s); a++;
+    }
+  }
+  return { a, u };
+}
+function mappingDialog(file, sh) {
+  return new Promise((resolve, reject) => {
+    if (!sh) { openModal(`<h2>Ustunlar topilmadi</h2><p class="note">«${esc(file.name)}» faylida F.I.Sh ustuni aniqlanmadi. Birinchi qatorda ustun nomlari (F.I.Sh, Tuman, Manzil, Telefon…) bo'lishi kerak.</p><div class="row" style="justify-content:flex-end"><button class="btn dark" data-close>Tushunarli</button></div>`); reject(); return; }
+    const opts = ['<option value="">— yo\'q —</option>'].concat(sh.hdr.map((h, i) => `<option value="${i}">${esc(h || ('Ustun ' + (i + 1)))}</option>`)).join('');
+    const rows = ROLES.filter(r => !['num'].includes(r[0])).map(([k, t]) => `<tr><td>${esc(t)}</td><td><select class="inp" data-role="${k}" style="min-height:36px;font-size:14px">${opts}</select></td></tr>`).join('');
+    openModal(`<h2>Ustunlarni tekshiring</h2><p class="note">«${esc(file.name)}» · ${esc(sh.sheet)} · ${sh.rows.length} qator. Manzil ustuni avtomatik topilmadi — qaysi ustun nimani bildirishini tanlang.</p><table class="maptbl">${rows}</table><div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Bekor qilish</button><button class="btn red" id="mapOk">Yuklash</button></div>`, () => reject());
+    $$('[data-role]').forEach(el => { const v = sh.roles[el.dataset.role]; if (v != null) el.value = v; });
+    $('#mapOk').onclick = () => { const roles = {}; $$('[data-role]').forEach(el => { if (el.value !== '') roles[el.dataset.role] = +el.value; }); closeModal(true); resolve(roles); };
+  });
+}
+
+/* ================== JOYLASHUV (GEO) ================== */
+function placeFallbacks() {
+  for (const s of S.students) {
+    if (s.lat != null && rank(s.acc) >= 1) continue;
+    const d = DK[s.dk];
+    const c = d ? d.c : [41.45, 60.6];
+    const p = jitter(c, s.id, d && /sh$/.test(d.k) ? 1600 : 2600);
+    s.lat = p[0]; s.lon = p[1]; s.acc = 'tuman';
+  }
+  learnMahallas();
+}
+function learnMahallas() {
+  const memo = {};
+  for (const s of S.students) {
+    if (!s.mah || rank(s.acc) < 3 || s.src === 'learned') continue;
+    const key = s.dk + '|' + s.mah; (memo[key] = memo[key] || []).push([s.lat, s.lon]);
+  }
+  let n = 0;
+  for (const s of S.students) {
+    if (!s.mah || rank(s.acc) >= 3 && s.src !== 'learned') continue;
+    const pts = memo[s.dk + '|' + s.mah]; if (!pts) continue;
+    const c = [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
+    if (rank(s.acc) < 3) n++;
+    const p = jitter(c, s.id, 220); s.lat = p[0]; s.lon = p[1]; s.acc = 'mahalla'; s.src = 'learned';
+  }
+  return n;
+}
+function geoQueries(s) {
+  const d = DK[s.dk]; const dn = d ? d.n : s.dcol;
+  const a = String(s.addr || '').replace(/[`ʻʼ’‘]/g, "'").replace(/\s+/g, ' ').trim();
+  const qs = [];
+  if (a) qs.push(/xorazm/i.test(a) ? a : `Xorazm viloyati, ${dn ? dn + ', ' : ''}${a}`);
+  if (s.mah) qs.push(`Xorazm viloyati, ${dn ? dn + ', ' : ''}${s.mah} mahallasi`);
+  return [...new Set(qs)];
+}
+async function geocodeOne(q, s) {
+  if (GEO[q] !== undefined) return GEO[q];
+  const res = await ymaps.geocode(q, { results: 1, boundedBy: BBOX, strictBounds: true });
+  const g = res.geoObjects.get(0);
+  let out = null;
+  if (g) {
+    const c = g.geometry.getCoordinates();
+    const md = g.properties.get('metaDataProperty.GeocoderMetaData') || {};
+    const kind = md.kind || '', prec = md.precision || '';
+    let acc = null;
+    if (kind === 'house' || ['exact', 'number', 'near', 'range'].includes(prec)) acc = 'uy';
+    else if (kind === 'street' || prec === 'street') acc = 'kocha';
+    else if (['district', 'vegetation', 'hydro', 'other', 'railway_station', 'route', 'entrance', 'metro'].includes(kind)) acc = 'mahalla';
+    else if (kind === 'locality') acc = 'aholi';
+    const inBox = c[0] > BBOX[0][0] && c[0] < BBOX[1][0] && c[1] > BBOX[0][1] && c[1] < BBOX[1][1];
+    const d = DK[s.dk];
+    const far = d && hav(d.c, c) > 40;
+    const sameAsCity = d && acc === 'aholi' && hav(d.c, c) < 2;
+    if (acc && inBox && !far && !sameAsCity) out = { lat: c[0], lon: c[1], acc, txt: md.text || '' };
+  }
+  GEO[q] = out; lsSet(LSG, GEO);
+  return out;
+}
+let geoStop = false;
+async function runGeocode() {
+  if (!window.ymaps || !ymaps.geocode) { toast('Xarita yuklanmagan — avval Yandex API kalitini kiriting', 4000); return; }
+  const list = S.view.filter(s => rank(s.acc) < 3 && !s.gq);
+  if (!list.length) { toast("Filtrdagi barcha manzillar allaqachon tekshirilgan"); return; }
+  geoStop = false; $('#geoProg').classList.remove('hidden'); $('#btnGeo').disabled = true;
+  let ok = 0, fail = 0, errs = 0;
+  for (let i = 0; i < list.length && !geoStop; i++) {
+    const s = list[i];
+    $('#geoTxt').textContent = `${i + 1} / ${list.length} · topildi: ${ok} · ${s.name}`;
+    $('#geoBar').style.width = ((i + 1) / list.length * 100) + '%';
+    let best = null;
+    try {
+      for (const q of geoQueries(s)) {
+        const fromCache = GEO[q] !== undefined;
+        const r = await geocodeOne(q, s);
+        if (r && (!best || rank(r.acc) > rank(best.acc))) best = r;
+        if (!fromCache) await sleep(130);
+        if (best && rank(best.acc) >= 3) break;
+      }
+      s.gq = 1;
+    } catch (e) {
+      errs++;
+      if (errs >= 3) { toast('Geokoder javob bermayapti. API kalitni tekshiring (Sozlamalar).', 6000); break; }
+      await sleep(800); continue;
+    }
+    if (best && rank(best.acc) > rank(s.acc)) { Object.assign(s, { lat: best.lat, lon: best.lon, acc: best.acc, geoTxt: best.txt, src: 'yandex' }); ok++; prep(s); updateMarker(s); }
+    else fail++;
+    if (i % 15 === 14) save();
+  }
+  const learned = learnMahallas();
+  S.students.forEach(prep); save(); renderAll(); refreshMarkers();
+  $('#geoProg').classList.add('hidden'); $('#btnGeo').disabled = false;
+  toast(`Aniqlandi: ${ok}. Topilmadi: ${fail}${learned ? `. Mahalla bo'yicha joylashtirildi: ${learned}` : ''}`, 6000);
+}
+
+/* ================== XARITA ================== */
+let MAP = null, CL = null, PM = new Map(), SCHOOL_PM = null, RINGS = [], ROUTE_OBJS = [], PLACING = null, ICONS = {};
+function iconUri(color, apx, big) {
+  const k = color + apx + big; if (ICONS[k]) return ICONS[k];
+  const r = big ? 10.5 : 7.5, sz = 26;
+  const svg = apx
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}"><circle cx="13" cy="13" r="${r}" fill="#fff" stroke="${color}" stroke-width="3.2" stroke-dasharray="4 2.4"/><circle cx="13" cy="13" r="2.6" fill="${color}"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}"><circle cx="13" cy="13" r="${r + 1.6}" fill="rgba(0,0,0,.18)"/><circle cx="13" cy="13" r="${r}" fill="${color}" stroke="#fff" stroke-width="2.6"/></svg>`;
+  return (ICONS[k] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+}
+const SCHOOL_ICON = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="58" viewBox="0 0 48 58"><ellipse cx="24" cy="55" rx="9" ry="3" fill="rgba(0,0,0,.25)"/><path d="M24 54 15 41H8a6 6 0 0 1-6-6V8a6 6 0 0 1 6-6h32a6 6 0 0 1 6 6v27a6 6 0 0 1-6 6h-7z" fill="#D7192A" stroke="#fff" stroke-width="2.5"/><circle cx="24" cy="21.5" r="10" fill="none" stroke="#fff" stroke-width="4.2"/></svg>`);
+
+function loadYandex() {
+  const key = lsGet(LSK, '') || CFG.yandexApiKey || '';
+  if (!key && !sessionStorage.getItem('oxf-nokey')) { keyDialog(true); return; }
+  const sc = document.createElement('script');
+  sc.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU' + (key ? '&apikey=' + encodeURIComponent(key) : '');
+  sc.onload = () => { try { ymaps.ready(initMap, mapFail); } catch (e) { mapFail(e); } };
+  sc.onerror = mapFail;
+  document.head.appendChild(sc);
+}
+function mapFail() {
+  $('#mapErr').classList.remove('hidden');
+  $('#mapErr').innerHTML = `<div><h3 style="margin:0 0 6px">Xarita yuklanmadi</h3><p class="note">Internet ulanishini va Yandex API kalitini tekshiring. Ro'yxat, tahlil va eksport xaritasiz ham ishlaydi.</p><div class="row" style="justify-content:center"><button class="btn red" data-act="keyhelp">Kalitni kiritish</button><button class="btn ghost" onclick="location.reload()">Qayta urinish</button></div></div>`;
+}
+function initMap() {
+  MAP = new ymaps.Map('map', { center: [S.school.lat, S.school.lon], zoom: 10, controls: ['zoomControl', 'searchControl', 'typeSelector', 'fullscreenControl', 'rulerControl'] }, { suppressMapOpenBlock: true, yandexMapDisablePoiInteractivity: true });
+  try { MAP.controls.get('searchControl').options.set({ provider: 'yandex#map', noPlacemark: false, size: 'auto', placeholderContent: 'Mahalla yoki ko\'chani qidirish' }); } catch (e) { }
+  CL = new ymaps.Clusterer({ preset: 'islands#invertedBlackClusterIcons', groupByCoordinates: false, clusterDisableClickZoom: true, clusterOpenBalloonOnClick: false, clusterHideIconOnBalloonOpen: false, gridSize: 56, hasBalloon: false });
+  CL.events.add('click', e => {
+    const t = e.get('target');
+    if (!t || typeof t.getGeoObjects !== 'function') return;
+    const ids = t.getGeoObjects().map(o => o.properties.get('sid'));
+    const pts = ids.map(id => S.students.find(s => s.id === id)).filter(Boolean);
+    const lats = pts.map(p => p.lat), lons = pts.map(p => p.lon);
+    const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lons) - Math.min(...lons));
+    if (span < 0.0015 || MAP.getZoom() >= 16) showClusterList(pts);
+    else MAP.setBounds([[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]], { checkZoomRange: true, zoomMargin: 70 });
+  });
+  MAP.geoObjects.add(CL);
+  MAP.events.add('click', e => { if (PLACING) placeAt(e.get('coords')); });
+  renderSchool(); renderRings(); refreshMarkers(); drawRoutes();
+  if (S.students.length) fitAll();
+  window.addEventListener('resize', () => { try { MAP.container.fitToViewport(); } catch (e) { } });
+  schoolHint();
+}
+function renderSchool() {
+  if (!MAP) return;
+  if (SCHOOL_PM) MAP.geoObjects.remove(SCHOOL_PM);
+  SCHOOL_PM = new ymaps.Placemark([S.school.lat, S.school.lon], { hintContent: esc(S.school.name) + ' — maktab' }, { iconLayout: 'default#image', iconImageHref: SCHOOL_ICON, iconImageSize: [48, 58], iconImageOffset: [-24, -56], zIndex: 2000, zIndexHover: 2000, hasBalloon: false });
+  MAP.geoObjects.add(SCHOOL_PM);
+}
+function renderRings() {
+  if (!MAP) return;
+  RINGS.forEach(r => MAP.geoObjects.remove(r)); RINGS = [];
+  if (!S.settings.rings) return;
+  for (const km of S.settings.ringList) {
+    const c = new ymaps.Circle([[S.school.lat, S.school.lon], km * 1000], { hintContent: km + ' km radius' }, { fillColor: '#D7192A08', strokeColor: '#D7192A', strokeOpacity: 0.55, strokeWidth: 1.5, strokeStyle: 'shortdash', interactivityModel: 'default#transparent' });
+    MAP.geoObjects.add(c); RINGS.push(c);
+  }
+}
+function makePM(s) {
+  const pm = new ymaps.Placemark([s.lat, s.lon], { sid: s.id, hintContent: esc(s.name) + ' · ' + esc(s.district) }, { iconLayout: 'default#image', iconImageHref: iconUri(colorOf(s), rank(s.acc) < 3, s.id === S.sel), iconImageSize: [26, 26], iconImageOffset: [-13, -13], hasBalloon: false, openBalloonOnClick: false });
+  pm.events.add('click', () => select(s.id, true));
+  PM.set(s.id, pm); return pm;
+}
+function updateMarker(s) {
+  const pm = PM.get(s.id); if (!pm) return;
+  pm.geometry.setCoordinates([s.lat, s.lon]);
+  pm.options.set('iconImageHref', iconUri(colorOf(s), rank(s.acc) < 3, s.id === S.sel));
+  pm.options.set('zIndex', s.id === S.sel ? 1500 : 0);
+}
+function refreshMarkers() {
+  if (!MAP) return;
+  CL.removeAll();
+  const arr = [];
+  for (const s of S.view) { if (s.lat == null) continue; const pm = PM.get(s.id) || makePM(s); updateMarker(s); arr.push(pm); }
+  CL.add(arr);
+  renderLegend();
+}
+function fitAll() {
+  if (!MAP) return;
+  const pts = (S.view.length ? S.view : S.students).filter(s => s.lat != null).map(s => [s.lat, s.lon]).concat([[S.school.lat, S.school.lon]]);
+  if (pts.length < 2) { MAP.setCenter([S.school.lat, S.school.lon], 12); return; }
+  const la = pts.map(p => p[0]), lo = pts.map(p => p[1]);
+  MAP.setBounds([[Math.min(...la), Math.min(...lo)], [Math.max(...la), Math.max(...lo)]], { checkZoomRange: true, zoomMargin: 50 });
+}
+function focusOn(s) { if (MAP && s.lat != null) MAP.setCenter([s.lat, s.lon], Math.max(MAP.getZoom(), 14), { duration: 300 }); }
+function renderLegend() {
+  const items = S.settings.colorMode === 'status'
+    ? STATUSES.map(s => `<span><i style="background:${s.c}"></i>${esc(s.t)}</span>`)
+    : Object.keys(S.groups).sort().map(g => `<span><i style="background:${groupColor(g)}"></i>${esc(g)}${S.groups[g].name ? ' — ' + esc(shortName(S.groups[g].name)) : ''}</span>`);
+  items.push(`<span><i style="background:#fff;border:2px dashed var(--ink)"></i>joyi taxminiy</span>`);
+  $('#legend').innerHTML = items.join('');
+}
+const shortName = n => String(n).split(/[(/]/)[0].trim().slice(0, 34);
+function showClusterList(pts) {
+  pts.sort((a, b) => a.name.localeCompare(b.name));
+  const c = $('#card');
+  c.innerHTML = `<div class="chd"><div class="cnav"><b>Bu joyda ${pts.length} ta o'quvchi</b><button class="iconbtn x" data-act="close" aria-label="Yopish">×</button></div></div><div class="cbody"><div class="list">${pts.map(itemHTML).join('')}</div></div>`;
+  c.classList.add('open');
+}
+
+/* --------- qo'lda belgilash --------- */
+function startPlacing(mode, id, queue) {
+  PLACING = { mode, id, queue: !!queue };
+  const s = mode === 'student' ? S.students.find(x => x.id === id) : null;
+  const b = $('#banner'); b.classList.remove('hidden'); b.classList.add('redb');
+  b.innerHTML = mode === 'school'
+    ? `<span>Xaritada <b>maktab binosini</b> bosing</span><button class="btn sm" data-act="cancelPlace">Bekor</button>`
+    : `<span style="min-width:0"><b>${esc(s.name)}</b> uyini xaritada bosing<br><small style="opacity:.9">${esc(s.addr || s.district)}</small></span>${queue ? '<button class="btn sm" data-act="skipPlace">O\'tkazish</button>' : ''}<button class="btn sm" data-act="cancelPlace">Tugatish</button>`;
+  if (s && MAP) { const d = DK[s.dk]; MAP.setCenter(rank(s.acc) >= 2 ? [s.lat, s.lon] : (d ? d.c : [s.lat, s.lon]), 14, { duration: 300 }); }
+  try { if (MAP) PLACING.cur = MAP.cursors.push('crosshair'); } catch (e) { }
+}
+function stopPlacing() { try { PLACING && PLACING.cur && PLACING.cur.remove(); } catch (e) { } PLACING = null; $('#banner').classList.add('hidden'); }
+function placeAt(c) {
+  if (PLACING.mode === 'school') {
+    Object.assign(S.school, { lat: +c[0].toFixed(6), lon: +c[1].toFixed(6), set: true });
+    stopPlacing(); afterSchoolChange(); toast('Maktab joylashuvi saqlandi'); return;
+  }
+  const s = S.students.find(x => x.id === PLACING.id); if (!s) return stopPlacing();
+  Object.assign(s, { lat: c[0], lon: c[1], acc: 'qolda', src: 'manual' }); touch(s);
+  const n = learnMahallas();
+  S.students.forEach(prep); save(); updateMarker(s); refreshMarkers(); renderAll(); if (S.sel === s.id) renderCard();
+  toast(`Saqlandi${n ? ` · shu mahalladagi yana ${n} ta o'quvchi joylashtirildi` : ''}`);
+  if (PLACING.queue) nextInQueue(s.id); else stopPlacing();
+}
+function nextInQueue(afterId) {
+  const q = S.view.filter(s => rank(s.acc) < 3);
+  const i = q.findIndex(s => s.id === afterId);
+  const nx = q[i + 1] || (i < 0 ? q[0] : null);
+  if (!nx) { stopPlacing(); toast("Navbat tugadi — filtrdagi barcha o'quvchilar belgilandi"); return; }
+  try { PLACING && PLACING.cur && PLACING.cur.remove(); } catch (e) { }
+  select(nx.id, false); startPlacing('student', nx.id, true);
+}
+
+/* ================== FILTR VA RO'YXAT ================== */
+function computeView() {
+  const f = S.f, q = norm(f.q), gs = new Set(f.groups), sts = new Set(f.st);
+  const v = S.students.filter(s => {
+    if (gs.size && !gs.has(s.g)) return false;
+    if (sts.size && !sts.has(s.status)) return false;
+    if (f.dist && s.dk !== f.dist) return false;
+    if (f.grade) { const [a, b] = f.grade.split('-').map(Number); const g = gradeNum(s.grade); if (g == null || g < a || g > b) return false; }
+    if (f.maxKm && (s.km == null || s.km > f.maxKm)) return false;
+    if (f.approx && rank(s.acc) >= 3) return false;
+    if (f.due && !isDue(s)) return false;
+    if (f.ptpk && !/ptpk/i.test(s.note)) return false;
+    if (q && !s._q.includes(q)) return false;
+    return true;
+  });
+  const by = {
+    dist: (a, b) => (a.km ?? 999) - (b.km ?? 999),
+    name: (a, b) => a.name.localeCompare(b.name),
+    dist2: (a, b) => a.district.localeCompare(b.district) || (a.km ?? 999) - (b.km ?? 999),
+    touch: (a, b) => (b.lastCall || '').localeCompare(a.lastCall || ''),
+    grade: (a, b) => (gradeNum(a.grade) ?? 99) - (gradeNum(b.grade) ?? 99),
+  }[f.sort] || ((a, b) => 0);
+  S.view = v.sort(by);
+}
+function itemHTML(s) {
+  const c = groupColor(s.g), st = ST[s.status] || ST.new, apx = rank(s.acc) < 3;
+  const tags = (apx ? '<span class="tag">taxminiy</span>' : '') + (/ptpk/i.test(s.note) ? '<span class="tag b">PTPK</span>' : '') + (isDue(s) ? '<span class="tag r">bugun</span>' : '');
+  return `<button class="item${s.id === S.sel ? ' sel' : ''}" data-id="${esc(s.id)}"><span class="gp${apx ? ' apx' : ''}" style="${apx ? 'color:' + c : 'background:' + c}">${esc(groupLetter(s.g))}</span><span style="min-width:0"><span class="nm">${esc(s.name)}</span><span class="sub">${esc(s.district)}${s.dir != null ? ' · ' + DIRS_S[s.dir] : ''}${s.grade ? ' · ' + esc(s.grade) + '-sinf' : ''}${tags}</span></span><span><span class="km">${fmtKm(s.km)}</span><span class="st" style="color:${st.k === 'new' ? 'var(--muted)' : st.k === 'rej' ? '#9A9AA3' : st.c}">${esc(st.t)}</span></span></button>`;
+}
+function renderList() {
+  const has = S.students.length > 0;
+  $('#emptyState').classList.toggle('hidden', has);
+  $('#listUI').classList.toggle('hidden', !has);
+  $('#demoBanner').classList.toggle('hidden', !S.demo);
+  if (!has) return;
+  const cnt = (pred) => S.students.filter(pred).length;
+  $('#grpChips').innerHTML = Object.keys(S.groups).sort().map(g => `<button class="chip" data-g="${esc(g)}" aria-pressed="${S.f.groups.includes(g)}" title="${esc(S.groups[g].name)}"><i style="background:${groupColor(g)}"></i>${esc(g)} <small>${cnt(s => s.g === g)}</small></button>`).join('');
+  $('#stChips').innerHTML = STATUSES.map(t => `<button class="chip" data-st="${t.k}" aria-pressed="${S.f.st.includes(t.k)}"><i style="background:${t.c}"></i>${esc(t.t)} <small>${cnt(s => s.status === t.k)}</small></button>`).join('');
+  const dists = [...new Map(S.students.map(s => [s.dk, s.district])).entries()].map(([k, n]) => ({ k, n, km: DK[k] ? hav([S.school.lat, S.school.lon], DK[k].c) : 999 })).sort((a, b) => a.km - b.km);
+  $('#fDist').innerHTML = '<option value="">Hammasi</option>' + dists.map(d => `<option value="${esc(d.k)}"${d.k === S.f.dist ? ' selected' : ''}>${esc(d.n)} (${cnt(s => s.dk === d.k)})</option>`).join('');
+  const v = S.view;
+  $('#cnt').textContent = `Ko'rsatilmoqda: ${v.length} / ${S.students.length}`;
+  const apx = v.filter(s => rank(s.acc) < 3).length;
+  $('#cntApx').textContent = apx ? `joyi taxminiy: ${apx}` : 'hammasi aniq joylangan';
+  $('#list').innerHTML = v.length ? v.map(itemHTML).join('') : `<div class="note" style="padding:16px;text-align:center">Filtr bo'yicha o'quvchi topilmadi</div>`;
+}
+function renderKPIs() {
+  const all = S.students, n = all.length;
+  const k = (pred) => all.filter(pred).length;
+  const near = k(s => s.km != null && s.km <= 15);
+  const exact = k(s => rank(s.acc) >= 3);
+  $('#kpis').innerHTML = [
+    [n, 'jami o\'quvchi'], [near, '15 km ichida'], [k(s => s.status === 'int'), 'qiziqdi', 'red'], [k(s => s.status === 'enr'), "ro'yxatga olindi"], [n ? Math.round(exact / n * 100) + '%' : '—', 'aniq joylashuv'],
+  ].map(([b, t, c]) => `<div class="kpi ${c || ''}"><b>${b}</b><span>${t}</span></div>`).join('');
+}
+function syncFilterInputs() {
+  $('#q').value = S.f.q; $('#fGrade').value = S.f.grade; $('#fKm').value = S.f.maxKm; $('#fKmV').textContent = S.f.maxKm ? '≤ ' + S.f.maxKm + ' km' : 'hammasi';
+  $('#fApx').checked = S.f.approx; $('#fDue').checked = S.f.due; $('#fPtpk').checked = S.f.ptpk; $('#fSort').value = S.f.sort;
+}
+
+/* ================== O'QUVCHI KARTASI ================== */
+function select(id, focus) {
+  const prev = S.sel; S.sel = id;
+  const p = S.students.find(s => s.id === prev); if (p) updateMarker(p);
+  const s = S.students.find(x => x.id === id); if (!s) return;
+  updateMarker(s); renderCard(); if (focus) focusOn(s);
+  $$('#list .item').forEach(el => el.classList.toggle('sel', el.dataset.id === id));
+  const el = $(`#list .item[data-id="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: 'nearest' });
+}
+function renderCard() {
+  const s = S.students.find(x => x.id === S.sel); const c = $('#card');
+  if (!s) { c.classList.remove('open'); return; }
+  const gc = groupColor(s.g), ph = fmtPhone(s.phone), idx = S.view.findIndex(x => x.id === s.id);
+  const near = s.lat != null ? S.students.filter(x => x.id !== s.id && x.lat != null && hav([s.lat, s.lon], [x.lat, x.lon]) <= 1.5).sort((a, b) => hav([s.lat, s.lon], [a.lat, a.lon]) - hav([s.lat, s.lon], [b.lat, b.lon])).slice(0, 6) : [];
+  const route = S.routes.find(r => r.stops.some(st => st.ids.includes(s.id)));
+  const ymUrl = s.lat != null ? `https://yandex.uz/maps/?rtext=${S.school.lat},${S.school.lon}~${s.lat.toFixed(6)},${s.lon.toFixed(6)}&rtt=auto` : '';
+  const rawRows = Object.entries(s.raw || {}).filter(([k]) => !/kasallik|tashxis|diagnoz|диагноз/i.test(k)).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
+  c.innerHTML = `
+  <div class="chd">
+    <div class="cnav">
+      <button class="iconbtn" data-act="prev" aria-label="Oldingi" ${idx <= 0 ? 'disabled' : ''}>‹</button>
+      <button class="iconbtn" data-act="next" aria-label="Keyingi" ${idx < 0 || idx >= S.view.length - 1 ? 'disabled' : ''}>›</button>
+      <span class="note">${idx >= 0 ? (idx + 1) + ' / ' + S.view.length : ''}</span>
+      <button class="iconbtn x" data-act="close" aria-label="Yopish">×</button>
+    </div>
+    <div style="margin-top:10px"><span class="grp" style="background:${gc}">${esc(s.g)}${S.groups[s.g] && S.groups[s.g].name ? ` <span>${esc(shortName(S.groups[s.g].name))}</span>` : ''}</span></div>
+    <div class="cname">${esc(s.name)}</div>
+    <div class="note">${esc(s.district)}${s.mah ? ' · ' + esc(s.mah) + ' mahallasi' : ''}</div>
+  </div>
+  <div class="cbody">
+    <div class="facts">
+      <div class="fact"><b>${fmtKm(s.km)}</b><span>maktabgacha</span></div>
+      <div class="fact"><b>${s.dir != null ? esc(DIRS[s.dir]) : '—'}</b><span>yo'nalish</span></div>
+      <div class="fact"><b>${s.grade ? esc(s.grade) + '-sinf' : '—'}</b><span>${s.age ? s.age + ' yosh' : 'sinf'}</span></div>
+    </div>
+    ${s.phone ? `<div class="phone">${ph.href ? `<a href="tel:${esc(ph.href)}">${esc(ph.t)}</a>` : `<span style="flex:1;font-weight:700">${esc(ph.t)}</span>`}<button class="btn sm dark" data-act="copyPhone">Nusxa</button></div>${!ph.ok ? '<div class="note" style="margin:-4px 0 8px">Telefon raqami formati noto\'g\'ri — tekshiring</div>' : ''}` : '<div class="warn" style="margin-bottom:8px">Telefon raqami yo\'q</div>'}
+    <div class="warn">Qo'ng'iroqda tashxisni birinchi bo'lib aytmang.</div>
+    <div class="sec">Holat</div>
+    <div class="stgrid">${STATUSES.map(t => `<button class="stb" data-status="${t.k}" aria-pressed="${s.status === t.k}"><i style="background:${t.c}"></i>${esc(t.t)}</button>`).join('')}</div>
+    <div class="grid2">
+      <div class="field"><label for="cFollow">Qayta bog'lanish</label><input class="inp" type="date" id="cFollow" value="${esc(s.follow || '')}"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn dark" data-act="logCall">Qo'ng'iroq qayd etish</button></div>
+    </div>
+    <div class="field"><label for="cNotes">Izoh (ota-ona fikri, kelishuv…)</label><textarea class="inp" id="cNotes" placeholder="Masalan: onasi bilan gaplashildi, avtobus bo'lsa keladi">${esc(s.notes || '')}</textarea></div>
+    ${(s.calls || []).length ? `<div class="log">${s.calls.slice(-6).reverse().map(l => `<div><time>${esc(fmtDT(l.t))}</time>${esc(l.x)}</div>`).join('')}</div>` : ''}
+    <div class="sec">Joylashuv</div>
+    <p style="margin:0 0 6px;font-size:14px">${esc(s.addr || '—')}</p>
+    <div class="note" style="margin-bottom:8px">Aniqlik: <b style="color:${rank(s.acc) < 3 ? 'var(--red)' : 'var(--ink)'}">${esc((ACC[s.acc] || { t: '—' }).t)}</b>${s.src === 'learned' ? ' (shu mahalladagi boshqa o\'quvchidan)' : ''}${route ? ` · <b>${esc(route.name)}</b>, ${route.stops.findIndex(st => st.ids.includes(s.id)) + 1}-bekat` : ''}</div>
+    <div class="row">
+      <button class="btn sm ${rank(s.acc) < 3 ? 'red' : ''}" data-act="place">${rank(s.acc) < 3 ? 'Uyini xaritada belgilash' : 'Joyini o\'zgartirish'}</button>
+      ${ymUrl ? `<a class="btn sm ghost" href="${esc(ymUrl)}" target="_blank" rel="noopener">Yandex'da yo'l</a>` : ''}
+    </div>
+    ${near.length ? `<div class="sec">1,5 km atrofida (${near.length})</div><div class="near">${near.map(x => `<button data-id="${esc(x.id)}"><span>${esc(x.name)} <span class="note">${esc(x.g)}</span></span><span class="note">${Math.round(hav([s.lat, s.lon], [x.lat, x.lon]) * 1000)} m</span></button>`).join('')}</div>` : ''}
+    <div class="sec">Ma'lumotlar</div>
+    <table class="kv">
+      <tr><td>Maktab</td><td>${esc(s.school || '—')}</td></tr>
+      <tr><td>Tug'ilgan</td><td>${esc(s.birth || '—')}</td></tr>
+      ${s.note ? `<tr><td>Izoh (ro'yxat)</td><td>${esc(s.note)}</td></tr>` : ''}
+      <tr><td>Kasallik turi</td><td><span class="blur" data-act="reveal" title="Ko'rish uchun bosing">${esc(s.diag || '—')}</span></td></tr>
+    </table>
+    ${rawRows ? `<details style="margin-top:8px"><summary>Fayldagi barcha ustunlar</summary><table class="kv">${rawRows}</table></details>` : ''}
+  </div>`;
+  c.classList.add('open'); $('.mapwrap').classList.add('carded');
+  $('#cNotes').addEventListener('input', debounce(e => { s.notes = e.target.value; touch(s); prep(s); save(); }, 400));
+  $('#cFollow').addEventListener('change', e => { s.follow = e.target.value; touch(s); save(); renderList(); });
+}
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function setStatus(s, k) {
+  if (s.status === k) return;
+  s.status = k; touch(s); s.lastCall = new Date().toISOString();
+  (s.calls = s.calls || []).push({ t: s.lastCall, x: 'Holat: ' + ST[k].t });
+  save(); updateMarker(s); computeView(); renderList(); renderKPIs(); renderCard();
+  if (S.settings.colorMode === 'status' || S.f.st.length) refreshMarkers();
+}
+
+/* ================== AVTOBUS MARSHRUTLARI ================== */
+function busCandidates() {
+  const maxKm = +$('#bMax').value || 999;
+  const apx = $('#bApx').checked;
+  return S.view.filter(s => s.lat != null && s.status !== 'rej' && s.km != null && s.km <= maxKm && (apx || rank(s.acc) >= 2));
+}
+function renderBusTab() {
+  const cand = busCandidates();
+  const all = S.view.filter(s => s.km != null);
+  const skipped = $('#bApx').checked ? 0 : S.view.filter(s => s.status !== 'rej' && s.km != null && s.km <= (+$('#bMax').value || 999) && rank(s.acc) < 2).length;
+  $('#busCount').innerHTML = `Marshrutga tushadi: <b>${cand.length}</b> o'quvchi (filtrdagi ${S.view.length} tadan, ${esc($('#bMax').value)} km ichida).` + (skipped ? ` <b>${skipped}</b> tasining joyi faqat tuman markazi bo'yicha ma'lum — ular hisobga olinmadi. Avval «Manzillarni aniqlash» yoki «Qo'lda belgilash» qiling.` : '');
+  // rose
+  const secs = Array.from({ length: 8 }, () => ({ n: 0, km: 0, d: {} }));
+  all.forEach(s => { const x = secs[s.dir]; x.n++; x.km += s.km; x.d[s.district] = (x.d[s.district] || 0) + 1; });
+  const max = Math.max(1, ...secs.map(x => x.n));
+  const cx = 150, cy = 150, R = 104;
+  let svg = '';
+  [0.33, 0.66, 1].forEach(f => svg += `<circle cx="${cx}" cy="${cy}" r="${R * f}" fill="none" stroke="#E5E5E9" stroke-dasharray="3 3"/>`);
+  secs.forEach((x, i) => {
+    const r = x.n ? 14 + (R - 14) * Math.sqrt(x.n / max) : 0;
+    const a0 = rad(i * 45 - 20 - 90), a1 = rad(i * 45 + 20 - 90);
+    if (r) svg += `<path d="M${cx},${cy} L${cx + r * Math.cos(a0)},${cy + r * Math.sin(a0)} A${r},${r} 0 0 1 ${cx + r * Math.cos(a1)},${cy + r * Math.sin(a1)} Z" fill="${x.n === max ? '#D7192A' : '#0E0E10'}" opacity="${x.n === max ? 1 : 0.78}"/>`;
+    const am = rad(i * 45 - 90), lr = R + 22;
+    svg += `<text x="${cx + lr * Math.cos(am)}" y="${cy + lr * Math.sin(am) + 4}" text-anchor="middle" font-size="11.5" font-weight="600" fill="#34343A">${DIRS_S[i]}</text>`;
+    if (x.n) { const nr = Math.max(r * 0.62, 10); svg += `<text x="${cx + nr * Math.cos(am)}" y="${cy + nr * Math.sin(am) + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">${x.n}</text>`; }
+  });
+  svg += `<circle cx="${cx}" cy="${cy}" r="9" fill="#D7192A" stroke="#fff" stroke-width="3"/>`;
+  $('#rose').innerHTML = svg;
+  const rows = secs.map((x, i) => ({ i, ...x })).filter(x => x.n).sort((a, b) => b.n - a.n);
+  $('#dirs').innerHTML = `<tr><th>Yo'nalish</th><th>Asosiy tumanlar</th><th style="text-align:right">O'quvchi</th><th style="text-align:right">O'rt. km</th></tr>` + rows.map(x => `<tr><td><b>${DIRS[x.i]}</b></td><td>${esc(Object.entries(x.d).sort((a, b) => b[1] - a[1]).slice(0, 2).map(e => e[0].replace(/ (tumani|shahri)$/, '')).join(', '))}</td><td class="n">${x.n}</td><td class="n">${Math.round(x.km / x.n)}</td></tr>`).join('');
+  renderRouteCards();
+}
+function planRoutes() {
+  const cand = busCandidates();
+  if (cand.length < 1) { toast("Marshrut uchun o'quvchi yo'q — filtrni yoki maks. masofani tekshiring", 4000); return; }
+  const cap = Math.max(2, +$('#bCap').value || 16), merge = Math.max(0, +$('#bMerge').value || 0), buses = Math.max(0, +$('#bBuses').value || 0);
+  const F = +$('#bFactor').value || 1.35, V = +$('#bSpeed').value || 35, dwell = +$('#bDwell').value || 0;
+  const sc = [S.school.lat, S.school.lon];
+  // 1) yaqin uylarni bekatga birlashtirish
+  const stops = [];
+  for (const s of cand.slice().sort((a, b) => a.km - b.km)) {
+    let best = null, bd = Infinity;
+    for (const st of stops) { const d = hav([st.lat, st.lon], [s.lat, s.lon]) * 1000; if (d <= merge && d < bd && st.ids.length < cap) { best = st; bd = d; } }
+    if (best) { const n = best.ids.length; best.lat = (best.lat * n + s.lat) / (n + 1); best.lon = (best.lon * n + s.lon) / (n + 1); best.ids.push(s.id); }
+    else stops.push({ lat: s.lat, lon: s.lon, ids: [s.id] });
+  }
+  stops.forEach(st => { st.ang = bearing(sc, [st.lat, st.lon]); st.d = hav(sc, [st.lat, st.lon]); });
+  const total = cand.length;
+  const need = Math.ceil(total / cap);
+  let k = buses || need;
+  let warn = '';
+  if (buses && buses < need) { warn = `${buses} ta avtobus ${total} o'quvchiga yetmaydi (sig'im ${cap}). ${need} ta avtobus bilan hisoblandi.`; k = need; }
+  k = Math.min(k, stops.length);
+  stops.sort((a, b) => a.ang - b.ang);
+  const n = stops.length;
+  const starts = n <= 90 ? [...Array(n).keys()] : Array.from({ length: 90 }, (_, i) => Math.floor(i * n / 90));
+  let best = null;
+  for (const st0 of starts) {
+    const order = stops.slice(st0).concat(stops.slice(0, st0));
+    const groups = splitGroups(order, k, cap, total);
+    const tours = groups.map(g => tour(g, sc));
+    const len = tours.reduce((a, t) => a + t.len, 0);
+    const loads = groups.map(g => g.reduce((a, s) => a + s.ids.length, 0));
+    const score = len + (Math.max(...loads) - Math.min(...loads)) * 0.4 + Math.max(...tours.map(t => t.maxRide)) * 0.5;
+    if (!best || score < best.score) best = { score, tours };
+  }
+  const byId = new Map(S.students.map(s => [s.id, s]));
+  S.routes = best.tours.map((t, i) => {
+    const km = t.len * F, mins = km / V * 60 + t.stops.length * dwell;
+    const ride = t.maxRide * F / V * 60 + (t.stops.length - 1) * dwell;
+    const secCount = {}; t.stops.forEach(st => { const k2 = sector(st.ang); secCount[k2] = (secCount[k2] || 0) + st.ids.length; });
+    const mainDir = DIRS[+Object.entries(secCount).sort((a, b) => b[1] - a[1])[0][0]];
+    return { id: 'r' + (i + 1), name: `${i + 1}-avtobus`, dir: mainDir, color: RCOLORS[i % RCOLORS.length], stops: t.stops.map(st => ({ lat: st.lat, lon: st.lon, ids: st.ids })), n: t.stops.reduce((a, st) => a + st.ids.length, 0), km, mins, ride, far: Math.max(...t.stops.map(st => st.d)), road: null };
+  });
+  S.routes.forEach(r => r.stops.forEach((st, j) => st.ids.forEach(id => { const s = byId.get(id); if (s) { s.route = r.name; s.stopNo = j + 1; } })));
+  S.students.forEach(s => { if (!S.routes.some(r => r.stops.some(st => st.ids.includes(s.id)))) { delete s.route; delete s.stopNo; } });
+  S.routeWarn = warn;
+  save(); drawRoutes(); renderRouteCards();
+  if (MAP) { const pts = S.routes.flatMap(r => r.stops.map(s => [s.lat, s.lon])).concat([sc]); const la = pts.map(p => p[0]), lo = pts.map(p => p[1]); MAP.setBounds([[Math.min(...la), Math.min(...lo)], [Math.max(...la), Math.max(...lo)]], { checkZoomRange: true, zoomMargin: 50 }); }
+  toast(`${S.routes.length} ta marshrut tuzildi`);
+}
+function splitGroups(order, k, cap, total) {
+  const target = Math.ceil(total / k), limit = Math.min(cap, target + Math.ceil(target * 0.12));
+  const groups = []; let cur = [], load = 0;
+  for (const s of order) {
+    const w = s.ids.length;
+    if (cur.length && load + w > limit && groups.length < k - 1) { groups.push(cur); cur = []; load = 0; }
+    cur.push(s); load += w;
+  }
+  if (cur.length) groups.push(cur);
+  const out = [];
+  for (const g of groups) { // sig'imdan oshsa — bo'lib yuborish
+    let c = [], l = 0;
+    for (const s of g) { if (c.length && l + s.ids.length > cap) { out.push(c); c = []; l = 0; } c.push(s); l += s.ids.length; }
+    if (c.length) out.push(c);
+  }
+  return out;
+}
+function tour(stops, sc) {
+  const P = [sc].concat(stops.map(s => [s.lat, s.lon])), n = P.length;
+  const D = P.map(a => P.map(b => hav(a, b)));
+  const seq = [0], used = new Set([0]);
+  while (seq.length < n) { const last = seq[seq.length - 1]; let bj = -1, bd = Infinity; for (let j = 1; j < n; j++) if (!used.has(j) && D[last][j] < bd) { bd = D[last][j]; bj = j; } seq.push(bj); used.add(bj); }
+  seq.push(0);
+  let improved = true, guard = 0;
+  while (improved && guard++ < 60) {
+    improved = false;
+    for (let i = 1; i < seq.length - 2; i++) for (let j = i + 1; j < seq.length - 1; j++) {
+      const a = seq[i - 1], b = seq[i], c = seq[j], d = seq[j + 1];
+      if (D[a][c] + D[b][d] + 1e-9 < D[a][b] + D[c][d]) { seq.splice(i, j - i + 1, ...seq.slice(i, j + 1).reverse()); improved = true; }
+    }
+  }
+  const inner = seq.slice(1, -1);
+  const rideOf = ord => { let acc = 0, burden = 0, max = 0; const rev = ord.slice().reverse(); let prev = 0; rev.forEach(ix => { acc += D[prev][ix]; prev = ix; burden += acc * stops[ix - 1].ids.length; max = Math.max(max, acc); }); return { burden, max }; };
+  const r1 = rideOf(inner), r2 = rideOf(inner.slice().reverse());
+  const ord = r1.burden <= r2.burden ? inner : inner.slice().reverse();
+  let len = 0; for (let i = 0; i < seq.length - 1; i++) len += D[seq[i]][seq[i + 1]];
+  return { stops: ord.map(ix => stops[ix - 1]), len, maxRide: Math.min(r1.max, r2.max) };
+}
+function drawRoutes() {
+  if (!MAP) return;
+  ROUTE_OBJS.forEach(o => MAP.geoObjects.remove(o)); ROUTE_OBJS = [];
+  const sc = [S.school.lat, S.school.lon];
+  S.routes.forEach(r => {
+    if (r.hidden) return;
+    if (!r.roadObj) {
+      const line = new ymaps.Polyline([sc].concat(r.stops.map(s => [s.lat, s.lon])).concat([sc]), { hintContent: esc(r.name + ' · ' + r.dir) }, { strokeColor: r.color, strokeWidth: 4, strokeOpacity: 0.85 });
+      MAP.geoObjects.add(line); ROUTE_OBJS.push(line);
+    } else { MAP.geoObjects.add(r.roadObj); ROUTE_OBJS.push(r.roadObj); }
+    r.stops.forEach((st, j) => {
+      const names = st.ids.map(id => (S.students.find(s => s.id === id) || {}).name).filter(Boolean);
+      const pm = new ymaps.Placemark([st.lat, st.lon], { iconContent: String(j + 1), hintContent: esc(r.name + ', ' + (j + 1) + '-bekat: ' + names.join(', ')) }, { preset: 'islands#circleIcon', iconColor: r.color, zIndex: 1200 });
+      MAP.geoObjects.add(pm); ROUTE_OBJS.push(pm);
+    });
+  });
+}
+function roadRoute(r) {
+  if (!window.ymaps || !ymaps.multiRouter) { toast('Xarita yuklanmagan'); return; }
+  const sc = [S.school.lat, S.school.lon];
+  const pts = [sc].concat(r.stops.map(s => [s.lat, s.lon])).concat([sc]);
+  toast('Yandex yo\'lni hisoblamoqda…');
+  const mr = new ymaps.multiRouter.MultiRoute({ referencePoints: pts, params: { routingMode: 'auto' } }, { boundsAutoApply: false, wayPointVisible: false, viaPointVisible: false, pinVisible: false, routeActiveStrokeColor: r.color, routeActiveStrokeWidth: 5, routeStrokeColor: r.color, routeActiveStrokeStyle: 'solid' });
+  mr.model.events.add('requestsuccess', () => {
+    const ar = mr.getActiveRoute(); if (!ar) { toast("Yo'l topilmadi"); return; }
+    const dist = ar.properties.get('distance'), dur = ar.properties.get('duration');
+    r.road = { km: dist.value / 1000, mins: dur.value / 60 + r.stops.length * (+$('#bDwell').value || 0) };
+    r.roadObj = mr; drawRoutes(); renderRouteCards(); save();
+    toast(`${r.name}: yo'l bo'ylab ${r.road.km.toFixed(1)} km`);
+  });
+  mr.model.events.add('requestfail', () => { try { MAP.geoObjects.remove(mr); } catch (e) { } toast("Yandex yo'lni hisoblay olmadi (kalitda marshrutlash ruxsati bo'lmasligi mumkin). To'g'ri chiziq qoldirildi.", 6000); });
+  MAP.geoObjects.add(mr);
+}
+function renderRouteCards() {
+  const box = $('#routes'); if (!box) return;
+  if (!S.routes.length) { box.innerHTML = ''; return; }
+  const byId = new Map(S.students.map(s => [s.id, s]));
+  const tot = S.routes.reduce((a, r) => a + (r.road ? r.road.km : r.km), 0);
+  box.innerHTML = `${S.routeWarn ? `<div class="warn" style="margin-top:10px">${esc(S.routeWarn)}</div>` : ''}
+  <div class="big" style="margin-top:12px"><div><b>${S.routes.length}</b><span>avtobus</span></div><div><b>${S.routes.reduce((a, r) => a + r.n, 0)}</b><span>o'quvchi</span></div><div><b>${Math.round(tot)} km</b><span>jami bir qatnov (taxm.)</span></div><div><b>${fmtHM(Math.max(...S.routes.map(r => r.ride)))}</b><span>bolaning eng uzoq yo'li</span></div></div>
+  <div class="row" style="margin-top:10px"><button class="btn sm dark" data-act="printAll">Hammasini chop etish</button><button class="btn sm ghost" data-act="clearRoutes">Marshrutlarni o'chirish</button></div>
+  ${S.routes.map((r, i) => `<div class="route"><div class="rh" style="border-left-color:${r.color}"><b>${esc(r.name)}</b><span class="note">${esc(r.dir)} · eng uzoq ${fmtKm(r.far)}</span></div>
+    <div class="rs"><div><b>${r.n}</b>o'quvchi</div><div><b>${r.stops.length}</b>bekat</div><div><b>${(r.road ? r.road.km : r.km).toFixed(0)} km</b>${r.road ? "yo'l bo'yicha" : 'taxminiy'}</div><div><b>${fmtHM(r.road ? r.road.mins : r.mins)}</b>aylanish</div></div>
+    <div class="ra"><button class="btn sm" data-act="routeShow" data-i="${i}">Xaritada</button><button class="btn sm" data-act="routeRoad" data-i="${i}">Yo'l bo'ylab</button><button class="btn sm ghost" data-act="routePrint" data-i="${i}">Chop etish</button></div>
+    <details><summary style="padding:0 12px">Bekatlar ro'yxati</summary><ol>${r.stops.map(st => `<li>${st.ids.map(id => byId.get(id)).filter(Boolean).map(s => `<a href="#" data-id="${esc(s.id)}" style="color:inherit">${esc(s.name)}</a> <span class="note">${esc(s.district.replace(/ (tumani|shahri)$/, ''))}</span>`).join('; ')}</li>`).join('')}</ol></details></div>`).join('')}`;
+}
+function printRoutes(list) {
+  const byId = new Map(S.students.map(s => [s.id, s]));
+  $('#printArea').innerHTML = list.map(r => `<section><h2>${esc(S.school.name)} — ${esc(r.name)} (${esc(r.dir)})</h2><p>${r.n} o'quvchi · ${r.stops.length} bekat · ~${Math.round(r.road ? r.road.km : r.km)} km · ~${fmtMin(r.road ? r.road.mins : r.mins)} · ${new Date().toLocaleDateString('ru-RU')}</p>
+  <table><tr><th>Bekat</th><th>O'quvchi</th><th>Manzil</th><th>Telefon</th><th>Masofa</th><th>Belgi</th></tr>${r.stops.map((st, j) => st.ids.map(id => byId.get(id)).filter(Boolean).map((s, k) => `<tr><td>${k === 0 ? j + 1 : ''}</td><td>${esc(s.name)}</td><td>${esc(s.addr)}</td><td>${esc(fmtPhone(s.phone).t)}</td><td>${fmtKm(s.km)}</td><td></td></tr>`).join('')).join('')}</table>
+  <p style="color:#D7192A;font-size:11px">MAXFIY: shaxsga doir ma'lumot. Faqat haydovchi va kuzatuvchi uchun.</p></section>`).join('');
+  setTimeout(() => window.print(), 50);
+}
+
+/* ================== TAHLIL ================== */
+function bars(rows, color) {
+  const max = Math.max(1, ...rows.map(r => r[1]));
+  return `<div class="bars">${rows.map(([t, v, c]) => `<div class="brow"><span class="t" title="${esc(t)}">${esc(t)}</span><span class="tr"><i style="width:${v / max * 100}%;background:${c || color}"></i></span><span class="v">${v}</span></div>`).join('')}</div>`;
+}
+function renderStats() {
+  const all = S.students; if (!all.length) { $('#stats').innerHTML = '<p class="note">Ro\'yxat yuklangach, tahlil shu yerda paydo bo\'ladi.</p>'; return; }
+  const v = S.view, k = (arr, p) => arr.filter(p).length;
+  const bands = [[0, 5], [5, 10], [10, 20], [20, 30], [30, 50], [50, 999]];
+  const byD = {}; v.forEach(s => { const d = byD[s.district] = byD[s.district] || { n: 0, km: 0 }; d.n++; d.km += s.km || 0; });
+  const grades = {}; v.forEach(s => { const g = gradeNum(s.grade); if (g) grades[g] = (grades[g] || 0) + 1; });
+  const contacted = k(v, s => s.status !== 'new');
+  $('#stats').innerHTML = `
+  <p class="note" style="margin-top:0">Tahlil «Ro'yxat»dagi filtr bo'yicha: ${v.length} / ${all.length} o'quvchi.</p>
+  <div class="big"><div><b>${k(v, s => s.km != null && s.km <= 10)}</b><span>10 km ichida</span></div><div><b>${k(v, s => s.km != null && s.km <= 25)}</b><span>25 km ichida</span></div><div><b>${contacted}</b><span>bog'lanilgan (${v.length ? Math.round(contacted / v.length * 100) : 0}%)</span></div><div><b>${k(v, s => s.status === 'int' || s.status === 'enr')}</b><span>qiziqdi + ro'yxatga olindi</span></div></div>
+  <div class="sec">Guruhlar</div>${bars(Object.keys(S.groups).sort().map(g => [g + (S.groups[g].name ? ' · ' + shortName(S.groups[g].name) : ''), k(v, s => s.g === g), groupColor(g)]))}
+  <div class="sec">Holatlar (voronka)</div>${bars(STATUSES.map(t => [t.t, k(v, s => s.status === t.k), t.c]))}
+  <div class="sec">Maktabdan masofa</div>${bars(bands.map(([a, b]) => [b > 900 ? `${a} km dan uzoq` : `${a}–${b} km`, k(v, s => s.km != null && s.km >= a && s.km < b)]), '#0E0E10')}
+  <div class="sec">Tumanlar (yaqinidan)</div>${bars(Object.entries(byD).sort((a, b) => a[1].km / a[1].n - b[1].km / b[1].n).map(([d, x]) => [`${d.replace(/ (tumani|shahri)$/, '')} · ~${Math.round(x.km / x.n)} km`, x.n]), '#155CC5')}
+  <div class="sec">Sinflar</div>${bars(Object.entries(grades).sort((a, b) => a[0] - b[0]).map(([g, n]) => [g + '-sinf', n]), '#D7192A')}
+  <div class="sec">Ma'lumot sifati</div>${bars([['Telefon yo\'q', k(v, s => !s.phone), '#D7192A'], ['Telefon formati noto\'g\'ri', k(v, s => s.phone && !fmtPhone(s.phone).ok), '#F08C96'], ['Joyi taxminiy', k(v, s => rank(s.acc) < 3), '#9A9AA3'], ['PTPK baholasin', k(v, s => /ptpk/i.test(s.note)), '#155CC5']])}
+  `;
+}
+
+/* ================== EKSPORT / SHIFRLASH ================== */
+function exportExcel() {
+  if (!window.XLSX) { toast('Excel kutubxonasi yuklanmadi'); return; }
+  if (!S.students.length) { toast("Eksport uchun ma'lumot yo'q"); return; }
+  const rows = (S.view.length ? S.view : S.students).map(s => Object.assign({}, s.raw, {
+    'Guruh': s.g, 'Tuman (aniqlangan)': s.district, 'Mahalla': s.mah, 'Masofa, km': s.km != null ? +s.km.toFixed(1) : '', "Yo'nalish": s.dir != null ? DIRS[s.dir] : '',
+    'Holat': (ST[s.status] || ST.new).t, 'Izoh (sotuv)': s.notes || '', "Qayta bog'lanish": s.follow || '', "Oxirgi aloqa": s.lastCall ? fmtDT(s.lastCall) : '',
+    'Avtobus': s.route || '', 'Bekat №': s.stopNo || '', 'Kenglik': s.lat != null ? +s.lat.toFixed(6) : '', 'Uzunlik': s.lon != null ? +s.lon.toFixed(6) : '', 'Joy aniqligi': (ACC[s.acc] || { t: '' }).t,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: Math.min(40, Math.max(8, k.length + 2)) }));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "O'quvchilar");
+  XLSX.writeFile(wb, `oxford_inklyuziv_${today()}.xlsx`);
+  toast(`${rows.length} qator Excel'ga yozildi (filtr bo'yicha)`);
+}
+const b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 32768) s += String.fromCharCode.apply(null, u8.subarray(i, i + 32768)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function deriveKey(pw, salt) { const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']); }
+async function encryptObj(obj, pw) { const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)); const key = await deriveKey(pw, salt); const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))); return { app: 'oxford-inklyuziv', v: 1, created: new Date().toISOString(), salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) }; }
+async function decryptObj(pack, pw) { const key = await deriveKey(pw, unb64(pack.salt)); const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(pack.iv) }, key, unb64(pack.ct)); return JSON.parse(new TextDecoder().decode(pt)); }
+function encDialog() {
+  if (!S.students.length) { toast("Ma'lumot yo'q"); return; }
+  if (!window.crypto || !crypto.subtle) { toast('Bu brauzer shifrlashni qo\'llamaydi (https kerak)'); return; }
+  openModal(`<h2>Shifrlangan fayl</h2><p class="note">Fayl AES-256 bilan shifrlanadi. Parolni kamida 10 belgidan qiling va faylga yozmang — hamkasbga alohida ayting.</p>
+  <div class="field"><label for="pw1">Parol</label><input class="inp" type="password" id="pw1" autocomplete="new-password"></div>
+  <div class="field"><label for="pw2">Parolni takrorlang</label><input class="inp" type="password" id="pw2" autocomplete="new-password"></div>
+  <div id="pwErr" class="warn hidden"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Bekor</button><button class="btn red" id="pwGo">Yaratish va yuklab olish</button></div>`);
+  $('#pw1').focus();
+  $('#pwGo').onclick = async () => {
+    const a = $('#pw1').value, b = $('#pw2').value;
+    const err = m => { $('#pwErr').textContent = m; $('#pwErr').classList.remove('hidden'); };
+    if (a.length < 10) return err('Parol kamida 10 belgi bo\'lsin');
+    if (a !== b) return err('Parollar mos emas');
+    $('#pwGo').disabled = true; $('#pwGo').textContent = 'Shifrlanmoqda…';
+    const pack = await encryptObj({ students: S.students, cols: S.cols, groups: S.groups, school: S.school }, a);
+    download(new Blob([JSON.stringify(pack)], { type: 'application/json' }), `oxford_inklyuziv_${today()}.enc.json`);
+    closeModal(); toast('Shifrlangan fayl yuklab olindi');
+  };
+}
+async function openEncrypted(fileOrPack) {
+  let pack = fileOrPack;
+  if (fileOrPack instanceof Blob) { try { pack = JSON.parse(await fileOrPack.text()); } catch (e) { toast("Fayl o'qilmadi"); return; } }
+  if (!pack || pack.app !== 'oxford-inklyuziv') { toast('Bu Oxford shifrlangan fayli emas'); return; }
+  return new Promise(res => {
+    openModal(`<h2>Shifrlangan ma'lumotni ochish</h2><p class="note">Fayl ${esc(pack.created ? fmtDT(pack.created) : '')} da yaratilgan. Parolni kiriting.</p>
+    <div class="field"><label for="pwo">Parol</label><input class="inp" type="password" id="pwo" autocomplete="current-password"></div><div id="pwErr" class="warn hidden"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Bekor</button><button class="btn red" id="pwOpen">Ochish</button></div>`, res);
+    $('#pwo').focus();
+    const go = async () => {
+      try {
+        const d = await decryptObj(pack, $('#pwo').value);
+        mergeData(d); closeModal(); toast(`Ochildi: ${d.students.length} ta o'quvchi`, 3500); res();
+      } catch (e) { $('#pwErr').textContent = "Parol noto'g'ri"; $('#pwErr').classList.remove('hidden'); }
+    };
+    $('#pwOpen').onclick = go; $('#pwo').onkeydown = e => { if (e.key === 'Enter') go(); };
+  });
+}
+function mergeData(d) {
+  if (S.demo) { S.students = []; S.groups = {}; S.demo = false; }
+  const by = new Map(S.students.map(s => [s.id, s]));
+  for (const s of d.students || []) { const o = by.get(s.id); if (!o) { S.students.push(s); } else if ((s.u || 0) > (o.u || 0) || rank(s.acc) > rank(o.acc)) { Object.assign(o, s); } }
+  Object.assign(S.groups, d.groups || {}); (d.cols || []).forEach(c => { if (!S.cols.includes(c)) S.cols.push(c); });
+  if (d.school && d.school.set && !S.school.set) S.school = d.school;
+  afterSchoolChange(true); fitAll();
+}
+
+/* ================== MODAL ================== */
+let modalCancel = null;
+function openModal(html, onCancel) { $('#modalBody').innerHTML = html; $('#modal').classList.remove('hidden'); modalCancel = onCancel || null; }
+function closeModal(silent) { $('#modal').classList.add('hidden'); const c = modalCancel; modalCancel = null; if (!silent && c) c(); }
+function keyDialog(first) {
+  openModal(`<h2>Yandex xarita kaliti</h2><p class="note">Xarita va manzillarni aniqlash uchun bepul Yandex API kaliti kerak (5 daqiqalik ish):</p>
+  <ol><li><a href="https://developer.tech.yandex.ru/services/" target="_blank" rel="noopener">developer.tech.yandex.ru</a> ga Yandex akkaunt bilan kiring</li><li>«Подключить API» → <b>«JavaScript API и HTTP Геокодер»</b> ni tanlang</li><li>Formani to'ldiring — kalit beriladi (xxxxxxxx-xxxx-…)</li><li>Kalit sozlamasida «Ограничение по HTTP Referer» ga saytingiz manzilini yozing (masalan <code>*.github.io</code>)</li><li>Kalitni pastga qo'ying</li></ol>
+  <div class="field"><label for="kIn">API kalit</label><input class="inp" id="kIn" value="${esc(lsGet(LSK, '') || CFG.yandexApiKey || '')}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+  <div class="row" style="justify-content:flex-end">${first ? '<button class="btn ghost" id="kSkip">Hozircha kalitsiz</button>' : '<button class="btn ghost" data-close>Yopish</button>'}<button class="btn red" id="kSave">Saqlash</button></div>`);
+  $('#kSave').onclick = () => { const v = $('#kIn').value.trim(); lsSet(LSK, v); closeModal(true); location.reload(); };
+  if (first) $('#kSkip').onclick = () => { sessionStorage.setItem('oxf-nokey', '1'); closeModal(true); loadYandex(); };
+}
+function schoolHint() {
+  if (S.school.set || CFG.school.set) return;
+  if (sessionStorage.getItem('oxf-school-hint')) return;
+  const b = $('#banner'); b.classList.remove('hidden', 'redb');
+  b.innerHTML = `<span>Maktab belgisi hozircha Xiva markazida. Masofalar to'g'ri chiqishi uchun maktabning aniq joyini belgilang.</span><button class="btn sm" data-act="schoolPick">Belgilash</button><button class="btn sm" data-act="hideHint">Keyin</button>`;
+}
+
+/* ================== UMUMIY RENDER ================== */
+function renderAll() { computeView(); renderKPIs(); renderList(); renderStats(); renderBusTab(); renderLegend(); }
+function afterDataChange() { placeFallbacks(); S.students.forEach(prep); save(); renderAll(); refreshMarkers(); }
+function afterSchoolChange(keepRoutes) {
+  S.students.forEach(prep); if (!keepRoutes) S.routes = [];
+  save(); renderSchool(); renderRings(); drawRoutes(); renderAll(); refreshMarkers(); fillSettings();
+}
+function fillSettings() { $('#sName').value = S.school.name; $('#sLat').value = S.school.lat; $('#sLon').value = S.school.lon; $('#sKey').value = lsGet(LSK, '') || CFG.yandexApiKey || ''; $('#sRings').value = S.settings.ringList.join(', '); }
+function setFilter(patch) { Object.assign(S.f, patch); save(); computeView(); renderList(); renderStats(); renderBusTab(); refreshMarkers(); }
+
+/* ================== NAMUNA ================== */
+function loadDemo() {
+  const fn = ['Aziz', 'Madina', 'Sardor', 'Nilufar', 'Jasur', 'Dilnoza', 'Bekzod', 'Shahzoda', 'Otabek', 'Malika', 'Javohir', 'Zarina', 'Umid', 'Sevara', 'Doston'];
+  const ln = ['Rahimov', 'Karimova', 'Yusupov', 'Sobirova', 'Qurbonov', 'Matyoqubova', 'Ollaberganov', 'Atajonova', 'Bobojonov', 'Ruzmetova'];
+  const groups = { 'A-sinf': 'Tayanch-harakat apparati nuqsoni', 'B-sinf': 'Aqliy rivojlanishda orqada qolish', 'C-sinf': 'Autizm spektri va nutq buzilishi' };
+  const ds = ['xivash', 'xivash', 'xivat', 'xivat', 'xivat', 'qosh', 'yar', 'urgsh', 'urgt', 'xonq', 'bog', 'shov', 'haz', 'gur'];
+  const mh = ['Gulshan', 'Tozabog\'', 'Lolazor', 'Navbahor', 'Yangiobod', 'Bog\'ishamol', 'Mevaston', 'Chinobod'];
+  S.students = []; S.groups = {}; S.cols = ['F.I.Sh', 'Manzil']; S.demo = true; S.routes = [];
+  Object.entries(groups).forEach(([g, n]) => S.groups[g] = { name: n });
+  for (let i = 0; i < 48; i++) {
+    const g = Object.keys(groups)[i % 3], d = DK[ds[i % ds.length]], m = mh[i % mh.length];
+    const name = `${ln[i % ln.length]} ${fn[(i * 7) % fn.length]} (namuna)`;
+    const id = hashStr('demo' + i);
+    const p = jitter(d.c, id, 3500);
+    S.students.push({ id, g, name, birth: String(2010 + i % 10) + '-yil', age: ageOf(String(2010 + i % 10)), district: d.n, dk: d.k, dcol: d.n, school: (i % 30 + 1) + '-maktab', grade: String(i % 11 + 1), diag: groups[g], addr: `${d.n}, ${m} MFY, ${i + 3}-uy`, phone: '+998 90 000 ' + String(1000 + i).slice(-4).replace(/(\d\d)(\d\d)/, '$1 $2'), note: i % 9 === 0 ? 'PTPK baholasin' : '', raw: {}, mah: norm(m), status: ['new', 'new', 'noans', 'int', 'think', 'enr', 'rej'][i % 7], notes: '', calls: [], follow: i % 11 === 0 ? today() : '', lat: p[0], lon: p[1], acc: i % 4 ? 'kocha' : 'tuman', u: Date.now() });
+  }
+  afterDataChange(); fitAll(); toast("Namuna yuklandi: 48 ta o'ylab topilgan o'quvchi");
+}
+
+/* ================== HODISALAR ================== */
+$$('.tab').forEach(t => t.addEventListener('click', () => {
+  $$('.tab').forEach(x => x.setAttribute('aria-selected', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + t.dataset.tab));
+  if (t.dataset.tab === 'bus') renderBusTab(); if (t.dataset.tab === 'stats') renderStats();
+}));
+$('#btnImport').onclick = () => $('#fileInput').click();
+$('#fileInput').onchange = e => { handleFiles(e.target.files); e.target.value = ''; };
+$('#encInput').onchange = e => { if (e.target.files[0]) openEncrypted(e.target.files[0]); e.target.value = ''; };
+$('#btnExport').onclick = exportExcel; $('#btnExcel2').onclick = exportExcel;
+$('#btnEnc').onclick = encDialog; $('#btnDec').onclick = () => $('#encInput').click();
+$('#q').addEventListener('input', debounce(e => setFilter({ q: e.target.value }), 180));
+$('#fDist').onchange = e => setFilter({ dist: e.target.value });
+$('#fGrade').onchange = e => setFilter({ grade: e.target.value });
+$('#fKm').oninput = e => { $('#fKmV').textContent = +e.target.value ? '≤ ' + e.target.value + ' km' : 'hammasi'; };
+$('#fKm').onchange = e => setFilter({ maxKm: +e.target.value });
+$('#fApx').onchange = e => setFilter({ approx: e.target.checked });
+$('#fDue').onchange = e => setFilter({ due: e.target.checked });
+$('#fPtpk').onchange = e => setFilter({ ptpk: e.target.checked });
+$('#fSort').onchange = e => setFilter({ sort: e.target.value });
+$('#btnReset').onclick = () => { setFilter({ q: '', groups: [], st: [], dist: '', grade: '', maxKm: 0, approx: false, due: false, ptpk: false }); syncFilterInputs(); };
+$('#grpChips').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; const g = b.dataset.g; const a = new Set(S.f.groups); a.has(g) ? a.delete(g) : a.add(g); setFilter({ groups: [...a] }); };
+$('#stChips').onclick = e => { const b = e.target.closest('[data-st]'); if (!b) return; const k = b.dataset.st; const a = new Set(S.f.st); a.has(k) ? a.delete(k) : a.add(k); setFilter({ st: [...a] }); };
+$('#list').onclick = e => { const b = e.target.closest('.item'); if (b) select(b.dataset.id, true); };
+$('#btnGeo').onclick = runGeocode; $('#geoStop').onclick = () => { geoStop = true; };
+$('#btnQueue').onclick = () => { const q = S.view.filter(s => rank(s.acc) < 3); if (!q.length) { toast("Filtrda joyi taxminiy o'quvchi yo'q"); return; } if (!MAP) { toast('Xarita yuklanmagan'); return; } select(q[0].id, false); startPlacing('student', q[0].id, true); };
+$('#btnCopy').onclick = async () => {
+  const v = S.view; if (!v.length) return;
+  const txt = `${S.school.name} — qo'ng'iroq ro'yxati (${new Date().toLocaleDateString('ru-RU')}), ${v.length} ta\n` + v.map((s, i) => `${i + 1}. ${s.name} — ${s.district}, ${fmtKm(s.km)} — ${fmtPhone(s.phone).t || 'tel yo\'q'} — ${s.g} — ${(ST[s.status] || ST.new).t}`).join('\n');
+  toast(await copyText(txt) ? `${v.length} qator nusxalandi. Guruhlarga tashlamang!` : 'Nusxalab bo\'lmadi', 4000);
+};
+$$('[data-cm]').forEach(b => b.onclick = () => { S.settings.colorMode = b.dataset.cm; $$('[data-cm]').forEach(x => x.setAttribute('aria-pressed', x === b)); save(); refreshMarkers(); });
+$('#btnRings').onclick = e => { S.settings.rings = !S.settings.rings; e.currentTarget.setAttribute('aria-pressed', S.settings.rings); save(); renderRings(); };
+$('#btnFit').onclick = fitAll;
+$('#btnSchool').onclick = () => MAP && MAP.setCenter([S.school.lat, S.school.lon], 15, { duration: 300 });
+$('#btnSchoolPick').onclick = () => { if (!MAP) return toast('Xarita yuklanmagan'); startPlacing('school'); };
+$('#btnSchoolSave').onclick = () => { const lat = parseFloat($('#sLat').value.replace(',', '.')), lon = parseFloat($('#sLon').value.replace(',', '.')); if (isNaN(lat) || isNaN(lon)) return toast("Koordinata noto'g'ri"); Object.assign(S.school, { name: $('#sName').value.trim() || 'Oxford School', lat, lon, set: true }); afterSchoolChange(); toast('Saqlandi'); };
+$('#btnKeySave').onclick = () => { lsSet(LSK, $('#sKey').value.trim()); location.reload(); };
+$('#btnRingsSave').onclick = () => { const l = $('#sRings').value.split(/[,\s]+/).map(Number).filter(x => x > 0 && x < 200); S.settings.ringList = l.length ? l : [5, 10, 20, 30]; save(); renderRings(); toast('Halqalar yangilandi'); };
+$('#btnWipe').onclick = e => {
+  const b = e.currentTarget;
+  if (b.dataset.armed) { localStorage.removeItem(LS); localStorage.removeItem(LSG); location.reload(); return; }
+  b.dataset.armed = 1; b.textContent = "Rostdan o'chirilsinmi? Yana bosing"; b.style.background = 'var(--red)'; b.style.color = '#fff';
+  setTimeout(() => { delete b.dataset.armed; b.textContent = "Barcha ma'lumotni o'chirish"; b.style.background = ''; b.style.color = 'var(--red)'; }, 4000);
+};
+$('#btnPlan').onclick = planRoutes;
+['bMax', 'bCap', 'bBuses', 'bApx'].forEach(id => $('#' + id).addEventListener('input', () => renderBusTab()));
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal(); });
+
+document.addEventListener('click', async e => {
+  const a = e.target.closest('[data-act]'); const idEl = e.target.closest('#card [data-id], #routes [data-id]');
+  if (idEl && !a) { e.preventDefault(); select(idEl.dataset.id, true); return; }
+  if (!a) { const st = e.target.closest('#card [data-status]'); if (st) { const s = S.students.find(x => x.id === S.sel); if (s) setStatus(s, st.dataset.status); } return; }
+  const act = a.dataset.act, s = S.students.find(x => x.id === S.sel);
+  if (act === 'pick') $('#fileInput').click();
+  else if (act === 'demo') loadDemo();
+  else if (act === 'keyhelp') keyDialog(false);
+  else if (act === 'close') { const p = s; S.sel = null; $('#card').classList.remove('open'); $('.mapwrap').classList.remove('carded'); if (p) updateMarker(p); $$('#list .item.sel').forEach(x => x.classList.remove('sel')); }
+  else if (act === 'prev' || act === 'next') { const i = S.view.findIndex(x => x.id === S.sel); const n = S.view[i + (act === 'next' ? 1 : -1)]; if (n) select(n.id, true); }
+  else if (act === 'copyPhone' && s) toast(await copyText(fmtPhone(s.phone).t) ? 'Raqam nusxalandi' : 'Nusxalab bo\'lmadi');
+  else if (act === 'logCall' && s) { s.lastCall = new Date().toISOString(); (s.calls = s.calls || []).push({ t: s.lastCall, x: "Qo'ng'iroq qilindi" + (s.notes ? ' · ' + s.notes.slice(0, 60) : '') }); touch(s); save(); renderCard(); toast("Qo'ng'iroq qayd etildi"); }
+  else if (act === 'reveal') a.classList.toggle('blur');
+  else if (act === 'place' && s) { if (!MAP) return toast('Xarita yuklanmagan'); startPlacing('student', s.id, false); }
+  else if (act === 'cancelPlace') stopPlacing();
+  else if (act === 'skipPlace') nextInQueue(PLACING.id);
+  else if (act === 'schoolPick') { sessionStorage.setItem('oxf-school-hint', '1'); startPlacing('school'); }
+  else if (act === 'hideHint') { sessionStorage.setItem('oxf-school-hint', '1'); $('#banner').classList.add('hidden'); }
+  else if (act === 'routeShow') { const r = S.routes[+a.dataset.i]; if (MAP && r) { const pts = r.stops.map(x => [x.lat, x.lon]).concat([[S.school.lat, S.school.lon]]); const la = pts.map(p => p[0]), lo = pts.map(p => p[1]); MAP.setBounds([[Math.min(...la), Math.min(...lo)], [Math.max(...la), Math.max(...lo)]], { checkZoomRange: true, zoomMargin: 60 }); } }
+  else if (act === 'routeRoad') roadRoute(S.routes[+a.dataset.i]);
+  else if (act === 'routePrint') printRoutes([S.routes[+a.dataset.i]]);
+  else if (act === 'printAll') printRoutes(S.routes);
+  else if (act === 'clearRoutes') { S.routes = []; S.students.forEach(x => { delete x.route; delete x.stopNo; }); save(); drawRoutes(); renderRouteCards(); }
+});
+document.addEventListener('keydown', e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if (e.key === '/' && !typing) { e.preventDefault(); $$('.tab')[0].click(); $('#q').focus(); }
+  if (e.key === 'Escape') { if (!$('#modal').classList.contains('hidden')) closeModal(); else if (PLACING) stopPlacing(); else if (S.sel) $('[data-act="close"]').click(); }
+  if (!typing && S.sel && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); $(`[data-act="${e.key === 'ArrowDown' ? 'next' : 'prev'}"]`)?.click(); }
+});
+// drag & drop
+['dragover', 'dragenter'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('#emptyState').classList.add('drag'); }));
+['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('#emptyState').classList.remove('drag'); }));
+document.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+
+/* ================== ISHGA TUSHIRISH ================== */
+load();
+$$('[data-cm]').forEach(x => x.setAttribute('aria-pressed', x.dataset.cm === S.settings.colorMode));
+$('#btnRings').setAttribute('aria-pressed', S.settings.rings);
+syncFilterInputs(); fillSettings();
+if (S.students.length) { placeFallbacks(); S.students.forEach(prep); }
+renderAll();
+loadYandex();
+if (!S.students.length && CFG.encryptedDataUrl && location.protocol.startsWith('http')) {
+  fetch(CFG.encryptedDataUrl, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(p => { if (p && p.app === 'oxford-inklyuziv') openEncrypted(p); }).catch(() => { });
+}
+window.__OXF = { S, planRoutes, tour, mahallaOf, matchDistrict, fmtPhone, handleFiles };
+}
+</script>
+</body>
+</html>
